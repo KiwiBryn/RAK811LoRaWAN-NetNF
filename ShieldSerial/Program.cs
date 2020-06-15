@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 //---------------------------------------------------------------------------------
+//#define SERIAL_SYNC_READ
 //#define ESP32_WROOM   //nanoff --target ESP32_WROOM_32 --serialport COM4 --update
 //#define NETDUINO3_WIFI   // nanoff --target NETDUINO3_WIFI --update
 //#define MBN_QUAIL // nanoff --target MBN_QUAIL --update
