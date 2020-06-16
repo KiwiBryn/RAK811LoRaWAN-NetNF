@@ -5,3 +5,5 @@ The repo has the source code for the series of blog posts written as I built thi
 
 01. [ShieldSerial](http://blog.devmobile.co.nz/2020/06/15/nanoframework-rak811-lorawan-library-part1/)
 02.
+
+![RAK811 EVB on nanoFrameowkr device](ST_STM32F769I_DISCOVERY-RAK811Working.jpg)
