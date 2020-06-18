@@ -16,9 +16,11 @@
 //---------------------------------------------------------------------------------
 //#define SERIAL_SYNC_READ
 //#define ESP32_WROOM   //nanoff --target ESP32_WROOM_32 --serialport COM4 --update
+// June 2020 experiencing issues with ComPort assignments
 //#define NETDUINO3_WIFI   // nanoff --target NETDUINO3_WIFI --update
 //#define MBN_QUAIL // nanoff --target MBN_QUAIL --update
-//#define ST_NUCLEO64_F091RC // nanoff --target ST_NUCLEO64_F091RC --update
+// June 2020 experiencing issues with "Couldn't find a valid native assembly required by nanoFramework.System.Text v1.1.0.2, checksum 0x8E6EB73D"
+//#define ST_NUCLEO64_F091RC // nanoff --target ST_NUCLEO64_F091RC --update 
 //#define ST_NUCLEO144_F746ZG //nanoff --target ST_NUCLEO144_F746ZG --update
 #define ST_STM32F769I_DISCOVERY      // nanoff --target ST_STM32F769I_DISCOVERY --update 
 namespace devMobile.IoT.Rak811.ShieldSerial
@@ -39,19 +41,19 @@ namespace devMobile.IoT.Rak811.ShieldSerial
       private const string SerialPortId = "";
 #endif
 #if NETDUINO3_WIFI
-      private const string SpiBusId = "";
+      private const string SerialPortId = "COM3";
 #endif
 #if MBN_QUAIL
       private const string SpiBusId = "";
 #endif
 #if ST_NUCLEO64_F091RC
-      private const string SpiBusId = "";
+      private const string SerialPortId = "";
 #endif
 #if ST_NUCLEO144_F746ZG
-      private const string SpiBusId = "";
+      private const string SerialPortId = "";
 #endif
 #if ST_STM32F429I_DISCOVERY
-      private const string SpiBusId = "";
+      private const string SerialPortId = "";
 #endif
 #if ST_STM32F769I_DISCOVERY
       private const string SerialPortId = "COM6";
