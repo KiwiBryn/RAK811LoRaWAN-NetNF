@@ -63,7 +63,7 @@ namespace devMobile.IoT.Rak811.ShieldSerial
       {
          SerialDevice serialDevice;
 
-         Debug.WriteLine("devMobile.IoT.Rfm9x.ShieldSerial starting");
+         Debug.WriteLine("devMobile.IoT.Rak811.ShieldSerial starting");
 
          Debug.WriteLine(Windows.Devices.SerialCommunication.SerialDevice.GetDeviceSelector());
 

@@ -37,7 +37,7 @@ namespace devMobile.IoT.Rak811.FactoryReset
       {
          SerialDevice serialDevice;
 
-         Debug.WriteLine("devMobile.IoT.Rfm9x.FactoryReset starting");
+         Debug.WriteLine("devMobile.IoT.Rak811.FactoryReset starting");
 
          Debug.WriteLine(Windows.Devices.SerialCommunication.SerialDevice.GetDeviceSelector());
 
