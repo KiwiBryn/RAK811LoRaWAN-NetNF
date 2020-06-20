@@ -7,7 +7,7 @@ Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "00.ShieldSerial", "ShieldSe
 EndProject
 Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "01.FactoryReset", "FactoryReset\01.FactoryReset.nfproj", "{93B1CCCD-40F1-4CD2-A447-1ECB7C362261}"
 EndProject
-Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "NetworkJoinOTAA", "NetworkJoinOTAA\NetworkJoinOTAA.nfproj", "{80C45307-9B83-41EA-8A44-DCFD6880E8A7}"
+Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "02.NetworkJoinOTAA", "NetworkJoinOTAA\02.NetworkJoinOTAA.nfproj", "{80C45307-9B83-41EA-8A44-DCFD6880E8A7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
