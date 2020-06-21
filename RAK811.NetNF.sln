@@ -9,6 +9,8 @@ Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "01.FactoryReset", "FactoryR
 EndProject
 Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "02.NetworkJoinOTAA", "NetworkJoinOTAA\02.NetworkJoinOTAA.nfproj", "{80C45307-9B83-41EA-8A44-DCFD6880E8A7}"
 EndProject
+Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "NetworkJoinABP", "NetworkJoinABP\NetworkJoinABP.nfproj", "{A2226F86-3231-4D26-A41C-A0DE8AB475FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,12 @@ Global
 		{80C45307-9B83-41EA-8A44-DCFD6880E8A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{80C45307-9B83-41EA-8A44-DCFD6880E8A7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{80C45307-9B83-41EA-8A44-DCFD6880E8A7}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{A2226F86-3231-4D26-A41C-A0DE8AB475FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2226F86-3231-4D26-A41C-A0DE8AB475FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2226F86-3231-4D26-A41C-A0DE8AB475FC}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{A2226F86-3231-4D26-A41C-A0DE8AB475FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2226F86-3231-4D26-A41C-A0DE8AB475FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2226F86-3231-4D26-A41C-A0DE8AB475FC}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
