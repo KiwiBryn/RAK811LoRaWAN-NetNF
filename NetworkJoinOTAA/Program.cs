@@ -55,7 +55,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             serialDevice.Handshake = SerialHandshake.None;
             serialDevice.DataBits = 8;
 
-            serialDevice.ReadTimeout = new TimeSpan(0, 0, 1);
+            serialDevice.ReadTimeout = new TimeSpan(0, 0, 2);
             serialDevice.WriteTimeout = new TimeSpan(0, 0, 4);
 
             DataWriter outputDataWriter = new DataWriter(serialDevice.OutputStream);
@@ -72,7 +72,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
                if (bytesRead > 0)
                {
                   string response = inputDataReader.ReadString(bytesRead);
-                  Debug.WriteLine($"RX sync:{response}");
+                  Debug.WriteLine($"RX :{response}");
                }
             }
 
@@ -87,7 +87,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             if (bytesRead > 0)
             {
                string response = inputDataReader.ReadString(bytesRead);
-               Debug.WriteLine($"RX sync:{response}");
+               Debug.WriteLine($"RX :{response}");
             }
 
             // Set the Region to AS923
@@ -101,7 +101,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             if (bytesRead > 0)
             {
                String response = inputDataReader.ReadString(bytesRead);
-               Debug.WriteLine($"RX sync:{response}");
+               Debug.WriteLine($"RX :{response}");
             }
 
             // Set the JoinMode
@@ -115,7 +115,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             if (bytesRead > 0)
             {
                String response = inputDataReader.ReadString(bytesRead);
-               Debug.WriteLine($"RX sync:{response}");
+               Debug.WriteLine($"RX :{response}");
             }
 
             // OTAA set the devEUI
@@ -129,7 +129,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             if (bytesRead > 0)
             {
                String response = inputDataReader.ReadString(bytesRead);
-               Debug.WriteLine($"RX sync:{response}");
+               Debug.WriteLine($"RX :{response}");
             }
 
             // Set the appEUI
@@ -143,7 +143,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             if (bytesRead > 0)
             {
                String response = inputDataReader.ReadString(bytesRead);
-               Debug.WriteLine($"RX sync:{response}");
+               Debug.WriteLine($"RX :{response}");
             }
 
             // Set the appKey
@@ -157,7 +157,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             if (bytesRead > 0)
             {
                String response = inputDataReader.ReadString(bytesRead);
-               Debug.WriteLine($"RX sync:{response}");
+               Debug.WriteLine($"RX :{response}");
             }
 
 
@@ -172,7 +172,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             if (bytesRead > 0)
             {
                String response = inputDataReader.ReadString(bytesRead);
-               Debug.WriteLine($"RX sync:{response}");
+               Debug.WriteLine($"RX :{response}");
             }
 
 
@@ -189,7 +189,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
                bytesRead = inputDataReader.Load(128);
 
                String response = inputDataReader.ReadString(bytesRead);
-               Debug.WriteLine($"RX sync:{response}");
+               Debug.WriteLine($"RX :{response}");
             }
 
             while (true)
@@ -205,7 +205,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
                if (bytesRead > 0)
                {
                   String response = inputDataReader.ReadString(bytesRead);
-                  Debug.WriteLine($"RX sync:{response}");
+                  Debug.WriteLine($"RX :{response}");
                }
 
                Thread.Sleep(20000);
