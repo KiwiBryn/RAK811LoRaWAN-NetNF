@@ -3,7 +3,11 @@ A C# library for [LoRaAlliance LoRaWAN](https://lora-alliance.org/about-lorawan)
 
 The repo has the source code for the series of blog posts written as I built this library
 
-01. [ShieldSerial](http://blog.devmobile.co.nz/2020/06/15/nanoframework-rak811-lorawan-library-part1/)
-02.
+
+01. [Invalidating the warranty…](https://blog.devmobile.co.nz/2020/06/15/nanoframework-rak811-lorawan-library-part1/)
+02. [Shield Serial](https://blog.devmobile.co.nz/2020/06/17/nanoframework-rak811-lorawan-library-part2/)
+03. [Factory Reset](https://blog.devmobile.co.nz/2020/06/21/nanoframework-rak811-lorawan-library-part3/)
+04. [Nasty OTAA connect](https://blog.devmobile.co.nz/2020/06/21/nanoframework-rak811-lorawan-library-part4/)
+05. [Nasty ABP connect](https://blog.devmobile.co.nz/2020/06/22/nanoframework-rak811-lorawan-library-part5/)
 
 ![RAK811 EVB on nanoFrameowkr device](ST_STM32F769I_DISCOVERY-RAK811Working.jpg)
