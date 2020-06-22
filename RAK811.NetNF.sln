@@ -9,7 +9,7 @@ Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "01.FactoryReset", "FactoryR
 EndProject
 Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "02.NetworkJoinOTAA", "NetworkJoinOTAA\02.NetworkJoinOTAA.nfproj", "{80C45307-9B83-41EA-8A44-DCFD6880E8A7}"
 EndProject
-Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "NetworkJoinABP", "NetworkJoinABP\NetworkJoinABP.nfproj", "{A2226F86-3231-4D26-A41C-A0DE8AB475FC}"
+Project("{11A8DD76-328B-46DF-9F39-F559912D0360}") = "03.NetworkJoinABP", "NetworkJoinABP\03.NetworkJoinABP.nfproj", "{A2226F86-3231-4D26-A41C-A0DE8AB475FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
