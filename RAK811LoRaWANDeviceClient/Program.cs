@@ -15,8 +15,8 @@
 //
 //---------------------------------------------------------------------------------
 #define ST_STM32F769I_DISCOVERY      // nanoff --target ST_STM32F769I_DISCOVERY --update 
-//#define OTAA
-#define ABP
+#define OTAA
+//#define ABP
 namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 {
    using System;
@@ -97,15 +97,27 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 
                while (true)
                {
-                  string response;
-
-                  result = device.Send(MessagePort, Payload, out response);
+                  result = device.Send(MessagePort, Payload);
                   if (result != Result.Success)
                   {
                      Debug.WriteLine($"Send failed {result}");
                   }
 
+                  result = device.Sleep();
+                  if (result != Result.Success)
+                  {
+                     Debug.WriteLine($"Sleep failed {result}");
+                     return;
+                  }
+
                   Thread.Sleep(20000);
+
+                  result = device.Wakeup();
+                  if (result != Result.Success)
+                  {
+                     Debug.WriteLine($"Wakeup failed {result}");
+                     return;
+                  }
                }
             }
          }

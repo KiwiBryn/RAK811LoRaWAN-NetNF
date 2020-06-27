@@ -218,6 +218,32 @@ namespace devMobile.IoT.LoRaWan
          return Result.Success;
       }
 
+      public Result Sleep()
+      {
+         // Put the module to sleep
+         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} device:sleep:1");
+         Result result = SendCommand("OK Sleep", $"at+set_config=device:sleep:1\r\n");
+         if (result != Result.Success)
+         {
+            return result;
+         }
+
+         return Result.Success;
+      }
+
+      public Result Wakeup()
+      {
+         // Put the module to sleep
+         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} device:sleep:0");
+         Result result = SendCommand("OK Wake Up", $"at+set_config=device:sleep:0\r\n");
+         if (result != Result.Success)
+         {
+            return result;
+         }
+
+         return Result.Success;
+      }
+
       public Result AbpInitialise(string devAddr, string nwksKey, string appsKey)
       {
          Result result;
@@ -337,50 +363,32 @@ namespace devMobile.IoT.LoRaWan
          return Result.Success;
       }
 
-      public Result Send(ushort port, string payload, out string response)
+      public Result Send(ushort port, string payload)
       {
-         uint bytesWritten;
-         uint txByteCount;
-         uint bytesRead;
+         Result result;
 
-         response = String.Empty;
-
-         bytesWritten = outputDataWriter.WriteString($"at+send=lora:{port}:{payload}\r\n");
-         Debug.WriteLine($"TX: send {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
-
-         // calling the 'Store' method on the data writer actually sends the data
-         txByteCount = outputDataWriter.Store();
-         Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
-
-         bytesRead = inputDataReader.Load(128);
-         if (bytesRead > 0)
+         // Send message the network
+         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} send");
+         result = SendCommand("OK", $"at+send=lora:{port}:{payload}\r\n");
+         if (result != Result.Success)
          {
-            response = inputDataReader.ReadString(bytesRead);
-            Debug.WriteLine($"RX :{response}");
+            return result;
          }
 
          return Result.Success;
       }
 
-      private Result SendCommand(string completed, string command)
-      {
-         string response;
-
-         return SendCommand(completed, command, out response);
-      }
-
-      private Result SendCommand(string success, string command, out string response)
+      private Result SendCommand(string success, string command)
       {
          uint bytesWritten;
          uint txByteCount;
          uint bytesRead;
+         string response = string.Empty;
          Result result = Result.Undefined;
-
-         response = "";
 
          bytesWritten = outputDataWriter.WriteString(command);
          txByteCount = outputDataWriter.Store();
-         Debug.WriteLine($"TX: send {outputDataWriter.UnstoredBufferLength} bytes {txByteCount} via {serialDevice.PortName}");
+         Debug.WriteLine($"TX: {bytesWritten} bytes send {outputDataWriter.UnstoredBufferLength} bytes {txByteCount} via {serialDevice.PortName}");
 
          while (result == Result.Undefined)
          {
@@ -388,22 +396,21 @@ namespace devMobile.IoT.LoRaWan
             if (bytesRead > 0)
             {
                response += inputDataReader.ReadString(bytesRead);
+            }
+            Debug.WriteLine($"RX {DateTime.UtcNow:hh:mm:ss}:{response}");
 
-               Debug.WriteLine($"RX {DateTime.UtcNow:hh:mm:ss}:{response}");
+            int errorIndex = response.IndexOf("ERROR:");
+            if (errorIndex != -1)
+            {
+               string errorNumber = response.Substring(errorIndex + "ERROR:".Length);
 
-               int errorIndex = response.IndexOf("Error");
-               if (errorIndex != -1)
-               {
-                  string errorNumber = response.Substring(errorIndex + "error".Length);
+               result = ModemErrorParser(errorNumber.Trim());
+            }
 
-                  result = ModemErrorParser(errorNumber);
-               }
-
-               int successIndex = response.IndexOf(success);
-               if (successIndex != -1)
-               {
+            int successIndex = response.IndexOf(success);
+            if (successIndex != -1)
+            {
                   result = Result.Success;
-               }
             }
             Thread.Sleep(500);
          }
