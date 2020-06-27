@@ -15,8 +15,8 @@
 //
 //---------------------------------------------------------------------------------
 #define ST_STM32F769I_DISCOVERY      // nanoff --target ST_STM32F769I_DISCOVERY --update 
-#define OTAA
-// #define ABP
+//#define OTAA
+#define ABP
 namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 {
    using System;
@@ -38,7 +38,7 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 #endif
 #if ABP
       private const string devAddress = "...";
-      private const string nwsKey = "...";
+      private const string nwksKey = "...";
       private const string appsKey = "...";
 #endif
       private const byte MessagePort = 1;
@@ -80,10 +80,10 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 #endif
 
 #if ABP
-               result = device.AbpInitialise(devAddress, nwsKey, appsKey);
+               result = device.AbpInitialise(devAddress, nwksKey, appsKey);
                if (result != Result.Success)
                {
-                  Debug.WriteLine($"OTAA Initialise failed {result}");
+                  Debug.WriteLine($"ABP Initialise failed {result}");
                   return;
                }
 #endif

@@ -218,7 +218,7 @@ namespace devMobile.IoT.LoRaWan
          return Result.Success;
       }
 
-      public Result AbpInitialise(string devAddr, string nwsKey, string appsKey)
+      public Result AbpInitialise(string devAddr, string nwksKey, string appsKey)
       {
          Result result;
 
@@ -226,7 +226,7 @@ namespace devMobile.IoT.LoRaWan
          {
             throw new ArgumentException($"devAddr invalid length must be {DevAddrLength} characters", "devAddr");
          }
-         if (nwsKey.Length != NwsKeyLength)
+         if (nwksKey.Length != NwsKeyLength)
          {
             throw new ArgumentException($"nwsKey invalid length must be {NwsKeyLength} characters", "nwsKey");
          }
@@ -243,34 +243,31 @@ namespace devMobile.IoT.LoRaWan
             return result;
          }
 
-         /*
          // set the devAddr
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:dev_eui");
-         result = SendCommand("OK", $"at+set_config=lora:dev_eui:{devEui}\r\n");
+         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:devAddr");
+         result = SendCommand("OK", $"at+set_config=lora:dev_addr:{devAddr}\r\n");
          if (result != Result.Success)
          {
             return result;
          }
 
-         // Set the appEUI
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:app_eui");
-         result = SendCommand("OK", $"at+set_config=lora:app_eui:{appEui}\r\n");
+         // Set the nwsKey
+         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:nwks_Key");
+         result = SendCommand("OK", $"at+set_config=lora:nwks_key:{nwksKey}\r\n");
          if (result != Result.Success)
          {
             return result;
          }
 
-         // Set the appKey
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:app_key");
-         result = SendCommand("OK", $"at+set_config=lora:app_key:{appKey}\r\n");
+         // Set the appsKey
+         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:apps_key");
+         result = SendCommand("OK", $"at+set_config=lora:apps_key:{appsKey}\r\n");
          if (result != Result.Success)
          {
             return result;
          }
 
          return Result.Success;
-         */
-         return Result.Undefined;
       }
 
       public Result OtaaInitialise(string devEui, string appEui, string appKey)
