@@ -70,6 +70,13 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
                   return;
                }
 
+               result = device.AdrOn();
+               if (result != Result.Success)
+               {
+                  Debug.WriteLine($"ADR on failed {result}");
+                  return;
+               }
+
 #if OTAA
                result = device.OtaaInitialise(DevEui, AppEui, AppKey);
                if (result != Result.Success)

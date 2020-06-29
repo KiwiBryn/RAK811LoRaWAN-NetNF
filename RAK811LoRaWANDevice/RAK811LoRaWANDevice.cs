@@ -244,6 +244,32 @@ namespace devMobile.IoT.LoRaWan
          return Result.Success;
       }
 
+      public Result AdrOff()
+      {
+         // Put the module to sleep
+         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:adr:0");
+         Result result = SendCommand("OK", $"at+set_config=lora:adr:0\r\n");
+         if (result != Result.Success)
+         {
+            return result;
+         }
+
+         return Result.Success;
+      }
+
+      public Result AdrOn()
+      {
+         // Put the module to sleep
+         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:adr:1");
+         Result result = SendCommand("OK", $"at+set_config=lora:adr:1\r\n");
+         if (result != Result.Success)
+         {
+            return result;
+         }
+
+         return Result.Success;
+      }
+
       public Result AbpInitialise(string devAddr, string nwksKey, string appsKey)
       {
          Result result;
