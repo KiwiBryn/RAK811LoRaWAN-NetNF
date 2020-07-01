@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 //---------------------------------------------------------------------------------
+//#define DIAGNOSTICS
 namespace devMobile.IoT.LoRaWan
 {
    using System;
@@ -45,7 +46,7 @@ namespace devMobile.IoT.LoRaWan
       Undefined = 0,
       Success,
       ResponseInvalid,
-      ResponseTimeout,
+      ATResponseTimeout,
       ATCommandUnsuported,
       ATCommandInvalidParameter,
 
@@ -86,13 +87,30 @@ namespace devMobile.IoT.LoRaWan
       public const ushort NwsKeyLength = 32;
       public const ushort AppsKeyLength = 32;
 
+      private const int CommandTimeoutDefault = 3000;
+
       private SerialDevice serialDevice = null;
       private TimeSpan ReadTimeoutDefault = new TimeSpan(0, 0, 1);
       private TimeSpan WriteTimeoutDefault = new TimeSpan(0, 0, 2);
       private DataReader inputDataReader = null;
       private DataWriter outputDataWriter = null;
 
-      public Result Initialise(string serialPortId, SerialParity serialParity, ushort dataBits, SerialStopBitCount stopBitCount,
+      private string atCommandExpectedResponse;
+      private string response;
+      private Result result;
+      private readonly AutoResetEvent atExpectedEvent;
+
+      public delegate void MessageConfirmationHandler(int rssi, int snr);
+      public MessageConfirmationHandler OnMessageConfirmation;
+      public delegate void ReceiveMessageHandler(int port, int rssi, int snr, string payload);
+      public ReceiveMessageHandler OnReceiveMessage;
+
+      public Rak811LoRaWanDevice()
+      {
+         this.atExpectedEvent = new AutoResetEvent(false);
+      }
+
+      public Result Initialise(string serialPortId, uint baudRate, SerialParity serialParity, ushort dataBits, SerialStopBitCount stopBitCount,
          TimeSpan readTimeout = default, TimeSpan writeTimeout = default)
       {
          Result result;
@@ -102,12 +120,17 @@ namespace devMobile.IoT.LoRaWan
          serialDevice = SerialDevice.FromId(serialPortId);
 
          // set parameters
-         serialDevice.BaudRate = 9600;
+         serialDevice.BaudRate = baudRate;
          serialDevice.Parity = serialParity;
          serialDevice.DataBits = dataBits;
          serialDevice.StopBits = stopBitCount;
          serialDevice.Handshake = SerialHandshake.None;
          serialDevice.WatchChar = '\n';
+
+         response = string.Empty;
+         atCommandExpectedResponse = string.Empty;
+
+         serialDevice.DataReceived += SerialDevice_DataReceived;
 
          if (readTimeout == default)
          {
@@ -122,9 +145,27 @@ namespace devMobile.IoT.LoRaWan
          outputDataWriter = new DataWriter(serialDevice.OutputStream);
          inputDataReader = new DataReader(serialDevice.InputStream);
 
+         uint bytesRead;
+
+         Debug.WriteLine("Buffer empty start");
+         do
+         {
+            bytesRead = inputDataReader.Load(128);
+            if (bytesRead > 0)
+            {
+               response += inputDataReader.ReadString(bytesRead);
+               Debug.Write(".");
+            }
+         }
+         while (bytesRead > 0);
+         Debug.WriteLine("");
+         Debug.WriteLine("Buffer empty Done");
+
          // Set the Working mode to LoRaWAN
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:work_mode");
-         result = SendCommand("Initialization OK", "at+set_config=lora:work_mode:0\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:work_mode LoRaWAN");
+#endif
+         result = SendCommand("Initialization OK", "at+set_config=lora:work_mode:0\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -154,8 +195,10 @@ namespace devMobile.IoT.LoRaWan
          }
 
          // Set the class
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:class");
-         Result result = SendCommand("OK", command);
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:class {loRaClass}");
+#endif
+         Result result = SendCommand("OK", command, CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -188,8 +231,10 @@ namespace devMobile.IoT.LoRaWan
          }
 
          // Set the confirmation type
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:confirm");
-         Result result = SendCommand("OK", command);
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:confirm {loRaConfirmType}");
+#endif
+         Result result = SendCommand("OK", command, CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -207,9 +252,10 @@ namespace devMobile.IoT.LoRaWan
             throw new ArgumentException($"RegionID length {regionID.Length} invalid", "regionID");
          }
 
-         // Set the Region to AS923
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:region");
-         Result result = SendCommand("OK", $"at+set_config=lora:region:{regionID}\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:region {regionID}");
+#endif
+         Result result = SendCommand("OK", $"at+set_config=lora:region:{regionID}\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -220,9 +266,11 @@ namespace devMobile.IoT.LoRaWan
 
       public Result Sleep()
       {
-         // Put the module to sleep
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} device:sleep:1");
-         Result result = SendCommand("OK Sleep", $"at+set_config=device:sleep:1\r\n");
+         // Put the RAK module to sleep
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} device:sleep:1");
+#endif
+         Result result = SendCommand("OK Sleep", $"at+set_config=device:sleep:1\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -233,9 +281,11 @@ namespace devMobile.IoT.LoRaWan
 
       public Result Wakeup()
       {
-         // Put the module to sleep
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} device:sleep:0");
-         Result result = SendCommand("OK Wake Up", $"at+set_config=device:sleep:0\r\n");
+         // Wakeup the RAK Module
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} device:sleep:0");
+#endif
+         Result result = SendCommand("OK Wake Up", $"at+set_config=device:sleep:0\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -246,9 +296,11 @@ namespace devMobile.IoT.LoRaWan
 
       public Result AdrOff()
       {
-         // Put the module to sleep
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:adr:0");
-         Result result = SendCommand("OK", $"at+set_config=lora:adr:0\r\n");
+         // Adaptive Data Rate off
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:adr:0");
+#endif
+         Result result = SendCommand("OK", $"at+set_config=lora:adr:0\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -259,9 +311,11 @@ namespace devMobile.IoT.LoRaWan
 
       public Result AdrOn()
       {
-         // Put the module to sleep
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:adr:1");
-         Result result = SendCommand("OK", $"at+set_config=lora:adr:1\r\n");
+         // Adaptive Data Rate on
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:adr:1");
+#endif
+         Result result = SendCommand("OK", $"at+set_config=lora:adr:1\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -288,32 +342,40 @@ namespace devMobile.IoT.LoRaWan
          }
 
          // Set the JoinMode to ABP
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:join_mode");
-         result = SendCommand("OK", $"at+set_config=lora:join_mode:1\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:join_mode ABP");
+#endif
+         result = SendCommand("OK", $"at+set_config=lora:join_mode:1\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
          }
 
          // set the devAddr
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:devAddr");
-         result = SendCommand("OK", $"at+set_config=lora:dev_addr:{devAddr}\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:devAddr {devAddr}");
+#endif
+         result = SendCommand("OK", $"at+set_config=lora:dev_addr:{devAddr}\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
          }
 
          // Set the nwsKey
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:nwks_Key");
-         result = SendCommand("OK", $"at+set_config=lora:nwks_key:{nwksKey}\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:nwks_Key {nwksKey}");
+#endif
+         result = SendCommand("OK", $"at+set_config=lora:nwks_key:{nwksKey}\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
          }
 
          // Set the appsKey
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:apps_key");
-         result = SendCommand("OK", $"at+set_config=lora:apps_key:{appsKey}\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:apps_key {appsKey}");
+#endif
+         result = SendCommand("OK", $"at+set_config=lora:apps_key:{appsKey}\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -340,32 +402,40 @@ namespace devMobile.IoT.LoRaWan
          }
 
          // Set the JoinMode to OTAA
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:join_mode");
-         result = SendCommand("OK", $"at+set_config=lora:join_mode:0\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:join_mode OTAA");
+#endif
+         result = SendCommand("OK", $"at+set_config=lora:join_mode:0\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
          }
 
          // set the devEUI
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:dev_eui");
-         result = SendCommand("OK", $"at+set_config=lora:dev_eui:{devEui}\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:dev_eui {devEui}");
+#endif
+         result = SendCommand("OK", $"at+set_config=lora:dev_eui:{devEui}\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
          }
 
          // Set the appEUI
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:app_eui");
-         result = SendCommand("OK", $"at+set_config=lora:app_eui:{appEui}\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:app_eui {appEui}");
+#endif
+         result = SendCommand("OK", $"at+set_config=lora:app_eui:{appEui}\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
          }
 
          // Set the appKey
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} lora:app_key");
-         result = SendCommand("OK", $"at+set_config=lora:app_key:{appKey}\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:app_key {appKey}");
+#endif
+         result = SendCommand("OK", $"at+set_config=lora:app_key:{appKey}\r\n", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -379,8 +449,10 @@ namespace devMobile.IoT.LoRaWan
          Result result;
 
          // Join the network
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} join");
-         result = SendCommand("OK Join Success", $"at+join\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} join");
+#endif
+         result = SendCommand("OK Join Success", $"at+join\r\n", (int)timeout.TotalMilliseconds);
          if (result != Result.Success)
          {
             return result;
@@ -389,13 +461,15 @@ namespace devMobile.IoT.LoRaWan
          return Result.Success;
       }
 
-      public Result Send(ushort port, string payload)
+      public Result Send(ushort port, string payload, TimeSpan timeout)
       {
          Result result;
 
          // Send message the network
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} send");
-         result = SendCommand("OK", $"at+send=lora:{port}:{payload}\r\n");
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} Send port:{port} payload {payload} timeout {timeout:hh:mm:ss}");
+#endif
+         result = SendCommand("OK", $"at+send=lora:{port}:{payload}\r\n", (int)timeout.TotalMilliseconds);
          if (result != Result.Success)
          {
             return result;
@@ -404,42 +478,19 @@ namespace devMobile.IoT.LoRaWan
          return Result.Success;
       }
 
-      private Result SendCommand(string success, string command)
+      private Result SendCommand(string expectedResponse, string command, int timeout)
       {
-         uint bytesWritten;
-         uint txByteCount;
-         uint bytesRead;
-         string response = string.Empty;
-         Result result = Result.Undefined;
+         this.atCommandExpectedResponse = expectedResponse;
 
-         bytesWritten = outputDataWriter.WriteString(command);
-         txByteCount = outputDataWriter.Store();
-         Debug.WriteLine($"TX: {bytesWritten} bytes send {outputDataWriter.UnstoredBufferLength} bytes {txByteCount} via {serialDevice.PortName}");
+         outputDataWriter.WriteString(command);
+         outputDataWriter.Store();
 
-         while (result == Result.Undefined)
-         {
-            bytesRead = inputDataReader.Load(128);
-            if (bytesRead > 0)
-            {
-               response += inputDataReader.ReadString(bytesRead);
-            }
-            Debug.WriteLine($"RX {DateTime.UtcNow:hh:mm:ss}:{response}");
+         this.atExpectedEvent.Reset();
 
-            int errorIndex = response.IndexOf("ERROR:");
-            if (errorIndex != -1)
-            {
-               string errorNumber = response.Substring(errorIndex + "ERROR:".Length);
+         if (!this.atExpectedEvent.WaitOne(timeout, false))
+            return Result.ATResponseTimeout;
 
-               result = ModemErrorParser(errorNumber.Trim());
-            }
-
-            int successIndex = response.IndexOf(success);
-            if (successIndex != -1)
-            {
-                  result = Result.Success;
-            }
-            Thread.Sleep(500);
-         }
+         this.atCommandExpectedResponse = string.Empty;
 
          return result;
       }
@@ -550,6 +601,93 @@ namespace devMobile.IoT.LoRaWan
          }
 
          return result;
+      }
+
+      private void SerialDevice_DataReceived(object sender, SerialDataReceivedEventArgs e)
+      {
+         // we only care if got EoL character
+         if (e.EventType != SerialData.WatchChar)
+         {
+            return;
+         }
+
+         SerialDevice serialDevice = (SerialDevice)sender;
+
+         using (DataReader inputDataReader = new DataReader(serialDevice.InputStream))
+         {
+            inputDataReader.InputStreamOptions = InputStreamOptions.Partial;
+
+            // read all available bytes from the Serial Device input stream
+            var bytesRead = inputDataReader.Load(serialDevice.BytesToRead);
+            if (bytesRead==0)
+            {
+               return;
+            }
+
+            response += inputDataReader.ReadString(bytesRead);
+
+            int eol;
+            do
+            {
+               // extract a line
+               eol = response.IndexOf("\r\n");
+
+               if (eol != -1)
+               {
+                  string line = response.Substring(0, eol + "\r\n".Length);
+                  response = response.Substring(line.Length);
+                  line = line.Trim();
+
+#if DIAGNOSTICS
+                  Debug.WriteLine($" Line :{line} ATCommand:{atCommandExpectedResponse} Response:{response}");
+#endif
+                  int errorIndex = line.IndexOf("ERROR:");
+                  if (errorIndex != -1)
+                  {
+                     string errorNumber = line.Substring(errorIndex + "ERROR:".Length);
+
+                     result = ModemErrorParser(errorNumber.Trim());
+                     atExpectedEvent.Set();
+                  }
+
+                  if (atCommandExpectedResponse != string.Empty)
+                  {
+                     int successIndex = line.IndexOf(atCommandExpectedResponse);
+                     if (successIndex != -1)
+                     {
+                        result = Result.Success;
+                        atExpectedEvent.Set();
+                     }
+                  }
+
+                  int receivedMessageIndex = line.IndexOf("at+recv=");
+                  if (receivedMessageIndex != -1)
+                  {
+                     string[] fields = line.Split("=,:".ToCharArray());
+
+                     int port = int.Parse(fields[1]);
+                     int rssi = int.Parse(fields[2]);
+                     int snr = int.Parse(fields[3]);
+                     int length = int.Parse(fields[4]);
+
+                     if (this.OnMessageConfirmation!=null)
+                     {
+                        OnMessageConfirmation(rssi, snr);
+                     }
+                     if (length > 0)
+                     {
+                        string payload = fields[5];
+
+                        if (this.OnReceiveMessage != null)
+                        {
+                           OnReceiveMessage(port, rssi, snr, payload);
+                        }
+                     }
+                  }
+               }
+            }
+            while (eol != -1);
+         }
       }
 
 
