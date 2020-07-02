@@ -758,6 +758,7 @@ namespace devMobile.IoT.LoRaWan
             serialDevice = null;
          }
 
+         /*
          if ( inputDataReader != null)
          {
             inputDataReader.Dispose();
@@ -769,6 +770,7 @@ namespace devMobile.IoT.LoRaWan
             outputDataWriter.Dispose();
             outputDataWriter = null;
          }
+         */
       }
    }
 }
