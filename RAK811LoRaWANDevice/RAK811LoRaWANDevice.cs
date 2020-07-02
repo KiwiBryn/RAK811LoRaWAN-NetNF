@@ -230,7 +230,7 @@ namespace devMobile.IoT.LoRaWan
             case LoRaConfirmType.Multicast:
                command = "at+set_config=lora:confirm:2";
                break;
-            case LoRaConfirmType.Proprietory:
+            case LoRaConfirmType.Proprietary:
                command = "at+set_config=lora:confirm:3";
                break;
             default:
