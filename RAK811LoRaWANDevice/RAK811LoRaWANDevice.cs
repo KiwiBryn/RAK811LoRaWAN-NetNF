@@ -39,7 +39,7 @@ namespace devMobile.IoT.LoRaWan
       Unconfirmed,
       Confirmed,
       Multicast,
-      Proprietory
+      Proprietary
    }
 
    public enum Result
