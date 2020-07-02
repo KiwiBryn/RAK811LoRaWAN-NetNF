@@ -643,7 +643,7 @@ namespace devMobile.IoT.LoRaWan
 
             // read all available bytes from the Serial Device input stream
             var bytesRead = inputDataReader.Load(serialDevice.BytesToRead);
-            if (bytesRead==0)
+            if (bytesRead == 0)
             {
                return;
             }
@@ -694,7 +694,7 @@ namespace devMobile.IoT.LoRaWan
                      int snr = int.Parse(fields[3]);
                      int length = int.Parse(fields[4]);
 
-                     if (this.OnMessageConfirmation!=null)
+                     if (this.OnMessageConfirmation != null)
                      {
                         OnMessageConfirmation(rssi, snr);
                      }
@@ -732,18 +732,18 @@ namespace devMobile.IoT.LoRaWan
       {
          Debug.Assert(payloadBcd != null);
          Debug.Assert(payloadBcd != String.Empty);
-         Debug.Assert(payloadBcd.Length%2 == 0);
+         Debug.Assert(payloadBcd.Length % 2 == 0);
          Byte[] payloadBytes = new byte[payloadBcd.Length / 2];
 
          char[] chars = payloadBcd.ToCharArray();
 
          for (int index = 0; index < payloadBytes.Length; index++)
          {
-            byte byteHigh = Convert.ToByte(chars[index*2 ].ToString(), 16);
-            byte byteLow = Convert.ToByte(chars[(index*2) + 1].ToString(), 16);
+            byte byteHigh = Convert.ToByte(chars[index * 2].ToString(), 16);
+            byte byteLow = Convert.ToByte(chars[(index * 2) + 1].ToString(), 16);
 
             payloadBytes[index] += (byte)(byteHigh * 16);
-            payloadBytes[index] += byteLow; 
+            payloadBytes[index] += byteLow;
          }
 
          return payloadBytes;
