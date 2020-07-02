@@ -19,6 +19,7 @@ namespace devMobile.IoT.LoRaWan
 {
    using System;
    using System.Diagnostics;
+   using System.Text;
    using System.Threading;
 
    using Windows.Devices.SerialCommunication;
@@ -147,7 +148,9 @@ namespace devMobile.IoT.LoRaWan
 
          uint bytesRead;
 
-         Debug.WriteLine("Buffer empty start");
+#if DIAGNOSTICS
+         Debug.WriteLine(" Buffer empty start");
+#endif
          do
          {
             bytesRead = inputDataReader.Load(128);
@@ -158,8 +161,10 @@ namespace devMobile.IoT.LoRaWan
             }
          }
          while (bytesRead > 0);
+#if DIAGNOSTICS
          Debug.WriteLine("");
-         Debug.WriteLine("Buffer empty Done");
+         Debug.WriteLine(" Buffer empty Done");
+#endif
 
          // Set the Working mode to LoRaWAN
 #if DIAGNOSTICS
@@ -184,6 +189,7 @@ namespace devMobile.IoT.LoRaWan
             case LoRaClass.A:
                command = "at+set_config=lora:class:0\r\n";
                break;
+            // Currently ClassB unsupported
             //case LoRaClass.B;
             //   command = "at+set_config=lora:class:1\r\n";
             //   break;
@@ -478,6 +484,24 @@ namespace devMobile.IoT.LoRaWan
          return Result.Success;
       }
 
+      public Result Send(ushort port, byte[] payloadBytes, TimeSpan timeout)
+      {
+         string payloadBcd = Rak811LoRaWanDevice.BytesToBcd(payloadBytes);
+         Result result;
+
+         // Send message the network
+#if DIAGNOSTICS
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} Send port:{port} payload {payload} timeout {timeout:hh:mm:ss}");
+#endif
+         result = SendCommand("OK", $"at+send=lora:{port}:{payloadBcd}\r\n", (int)timeout.TotalMilliseconds);
+         if (result != Result.Success)
+         {
+            return result;
+         }
+
+         return Result.Success;
+      }
+
       private Result SendCommand(string expectedResponse, string command, int timeout)
       {
          this.atCommandExpectedResponse = expectedResponse;
@@ -690,6 +714,40 @@ namespace devMobile.IoT.LoRaWan
          }
       }
 
+      // Utility functions for clients for processing messages payloads to be send, ands messages payloads received.
+
+      public static string BytesToBcd(byte[] payloadBytes)
+      {
+         Debug.Assert(payloadBytes != null);
+         Debug.Assert(payloadBytes.Length > 0);
+
+         StringBuilder payloadBcd = new StringBuilder(BitConverter.ToString(payloadBytes));
+
+         payloadBcd = payloadBcd.Replace("-", "");
+
+         return payloadBcd.ToString();
+      }
+
+      public static byte[] BcdToByes(string payloadBcd)
+      {
+         Debug.Assert(payloadBcd != null);
+         Debug.Assert(payloadBcd != String.Empty);
+         Debug.Assert(payloadBcd.Length%2 == 0);
+         Byte[] payloadBytes = new byte[payloadBcd.Length / 2];
+
+         char[] chars = payloadBcd.ToCharArray();
+
+         for (int index = 0; index < payloadBytes.Length; index++)
+         {
+            byte byteHigh = Convert.ToByte(chars[index*2 ].ToString(), 16);
+            byte byteLow = Convert.ToByte(chars[(index*2) + 1].ToString(), 16);
+
+            payloadBytes[index] += (byte)(byteHigh * 16);
+            payloadBytes[index] += byteLow; 
+         }
+
+         return payloadBytes;
+      }
 
       public void Dispose()
       {

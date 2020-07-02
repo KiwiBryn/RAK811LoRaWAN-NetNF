@@ -15,6 +15,8 @@
 //
 //---------------------------------------------------------------------------------
 #define ST_STM32F769I_DISCOVERY      // nanoff --target ST_STM32F769I_DISCOVERY --update 
+#define PAYLOAD_BCD
+#define PAYLOAD_BYTES
 #define OTAA
 //#define ABP
 #define CONFIRMED
@@ -38,21 +40,26 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
       private const string AppKey = "...";
 #endif
 #if ABP
-      private const string devAddress = "...";
-      private const string nwksKey = "...";
-      private const string appsKey = "...";
+      private const string DevAddress = "...";
+      private const string NwksKey = "...";
+      private const string AppsKey = "...";
 #endif
       private const string Region = "AS923";
       private const byte MessagePort = 1;
-      private const string Payload = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN
+#if PAYLOAD_BCD
+      private const string PayloadBcd = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN in BCD
+#endif
+#if PAYLOAD_BYTES
+      private static readonly byte[] PayloadBytes = { 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x4c, 0x6f, 0x52, 0x61, 0x57, 0x41, 0x4e}; // Hello LoRaWAN in bytes
+#endif
 
       public static void Main()
       {
          Result result;
 
-         Debug.WriteLine(" devMobile.IoT.Rak811LoRaWanDeviceClient starting");
+         Debug.WriteLine("devMobile.IoT.Rak811LoRaWanDeviceClient starting");
 
-         Debug.WriteLine(Windows.Devices.SerialCommunication.SerialDevice.GetDeviceSelector());
+         Debug.WriteLine($"Ports :{Windows.Devices.SerialCommunication.SerialDevice.GetDeviceSelector()}");
 
          try
          {
@@ -65,7 +72,9 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
                   return;
                }
 
+#if CONFIRMED
                device.OnMessageConfirmation += OnMessageConfirmationHandler;
+#endif
                device.OnReceiveMessage += OnReceiveMessageHandler;
 
                Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Region {Region}");
@@ -87,19 +96,20 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 #if CONFIRMED
                Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Confirmed");
                result = device.Confirm(LoRaConfirmType.Confirmed);
+               if (result != Result.Success)
+               {
+                  Debug.WriteLine($"Confirm on failed {result}");
+                  return;
+               }
 #else
                Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Unconfirmed");
                result = device.Confirm(LoRaConfirmType.Unconfirmed);
-#endif
                if (result != Result.Success)
                {
-#if CONFIRMED
-                  Debug.WriteLine($"Confirm on failed {result}");
-#else
                   Debug.WriteLine($"Confirm off failed {result}");
-#endif
                   return;
                }
+#endif
 
 #if OTAA
                Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} OTAA");
@@ -113,7 +123,7 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 
 #if ABP
                Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} ABP");
-               result = device.AbpInitialise(devAddress, nwksKey, appsKey);
+               result = device.AbpInitialise(DevAddress, NwksKey, AppsKey);
                if (result != Result.Success)
                {
                   Debug.WriteLine($"ABP Initialise failed {result}");
@@ -132,15 +142,21 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 
                while (true)
                {
-                  Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send port:{MessagePort} payload:{Payload}");
-                  result = device.Send(MessagePort, Payload, new TimeSpan(0,0,5));
+#if PAYLOAD_BCD
+                  Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send port:{MessagePort} payload BCD:{PayloadBcd}");
+                  result = device.Send(MessagePort, PayloadBcd, new TimeSpan(0,0,5));
+#endif
+#if PAYLOAD_BYTES
+                  Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send port:{MessagePort} payload Bytes:{BitConverter.ToString(PayloadBytes)}");
+                  result = device.Send(MessagePort, PayloadBytes, new TimeSpan(0,0,5));
+#endif
                   if (result != Result.Success)
                   {
                      Debug.WriteLine($"Send failed {result}");
                   }
 
                   // if we sleep module too soon response is missed
-                  Thread.Sleep(5000);
+                  Thread.Sleep(new TimeSpan( 0,0,5));
 
                   Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Sleep");
                   result = device.Sleep();
@@ -150,7 +166,7 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
                      return;
                   }
 
-                  Thread.Sleep(20000);
+                  Thread.Sleep(new TimeSpan(0, 5, 0));
 
                   Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Wakeup");
                   result = device.Wakeup();
@@ -173,9 +189,11 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
          Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send Confirm RSSI:{rssi} SNR:{snr}");
       }
 
-      static void OnReceiveMessageHandler(int port, int rssi, int snr, string payload)
+      static void OnReceiveMessageHandler(int port, int rssi, int snr, string payloadBcd)
       {
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Receive Message Port:{port} RSSI:{rssi} SNR:{snr} Payload:{payload}");
+         byte[] payloadBytes = Rak811LoRaWanDevice.BcdToByes(payloadBcd);
+
+         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Receive Message Port:{port} RSSI:{rssi} SNR:{snr} Payload:{payloadBcd} PayLoadBytes:{BitConverter.ToString(payloadBytes)}");
       }
    }
 }
