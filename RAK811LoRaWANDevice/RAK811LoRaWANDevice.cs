@@ -88,6 +88,7 @@ namespace devMobile.IoT.LoRaWan
       public const ushort NwsKeyLength = 32;
       public const ushort AppsKeyLength = 32;
 
+      private const string EndOfLineMarker = "\r\n";
       private readonly TimeSpan CommandTimeoutDefault = new TimeSpan(0, 0, 3);
 
       private SerialDevice serialDevice = null;
@@ -170,7 +171,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:work_mode LoRaWAN");
 #endif
-         result = SendCommand("Initialization OK", "at+set_config=lora:work_mode:0\r\n", CommandTimeoutDefault);
+         result = SendCommand("Initialization OK", "at+set_config=lora:work_mode:0", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -187,14 +188,14 @@ namespace devMobile.IoT.LoRaWan
          switch (loRaClass)
          {
             case LoRaClass.A:
-               command = "at+set_config=lora:class:0\r\n";
+               command = "at+set_config=lora:class:0";
                break;
             // Currently ClassB unsupported
             //case LoRaClass.B;
-            //   command = "at+set_config=lora:class:1\r\n";
+            //   command = "at+set_config=lora:class:1";
             //   break;
             case LoRaClass.C:
-               command = "at+set_config=lora:class:2\r\n";
+               command = "at+set_config=lora:class:2";
                break;
             default:
                throw new ArgumentException($"LoRa class value {loRaClass} invalid", "loRaClass");
@@ -221,16 +222,16 @@ namespace devMobile.IoT.LoRaWan
          switch (loRaConfirmType)
          {
             case LoRaConfirmType.Unconfirmed:
-               command = "at+set_config=lora:confirm:0\r\n";
+               command = "at+set_config=lora:confirm:0";
                break;
             case LoRaConfirmType.Confirmed:
-               command = "at+set_config=lora:confirm:1\r\n";
+               command = "at+set_config=lora:confirm:1";
                break;
             case LoRaConfirmType.Multicast:
-               command = "at+set_config=lora:confirm:2\r\n";
+               command = "at+set_config=lora:confirm:2";
                break;
             case LoRaConfirmType.Proprietory:
-               command = "at+set_config=lora:confirm:3\r\n";
+               command = "at+set_config=lora:confirm:3";
                break;
             default:
                throw new ArgumentException($"LoRa confirm type value {loRaConfirmType} invalid", "loRaConfirmType");
@@ -261,7 +262,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:region {regionID}");
 #endif
-         Result result = SendCommand("OK", $"at+set_config=lora:region:{regionID}\r\n", CommandTimeoutDefault);
+         Result result = SendCommand("OK", $"at+set_config=lora:region:{regionID}", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -276,7 +277,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} device:sleep:1");
 #endif
-         Result result = SendCommand("OK Sleep", $"at+set_config=device:sleep:1\r\n", CommandTimeoutDefault);
+         Result result = SendCommand("OK Sleep", $"at+set_config=device:sleep:1", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -291,7 +292,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} device:sleep:0");
 #endif
-         Result result = SendCommand("OK Wake Up", $"at+set_config=device:sleep:0\r\n", CommandTimeoutDefault);
+         Result result = SendCommand("OK Wake Up", $"at+set_config=device:sleep:0", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -306,7 +307,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:adr:0");
 #endif
-         Result result = SendCommand("OK", $"at+set_config=lora:adr:0\r\n", CommandTimeoutDefault);
+         Result result = SendCommand("OK", $"at+set_config=lora:adr:0", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -321,7 +322,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:adr:1");
 #endif
-         Result result = SendCommand("OK", $"at+set_config=lora:adr:1\r\n", CommandTimeoutDefault);
+         Result result = SendCommand("OK", $"at+set_config=lora:adr:1", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -351,7 +352,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:join_mode ABP");
 #endif
-         result = SendCommand("OK", $"at+set_config=lora:join_mode:1\r\n", CommandTimeoutDefault);
+         result = SendCommand("OK", $"at+set_config=lora:join_mode:1", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -361,7 +362,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:devAddr {devAddr}");
 #endif
-         result = SendCommand("OK", $"at+set_config=lora:dev_addr:{devAddr}\r\n", CommandTimeoutDefault);
+         result = SendCommand("OK", $"at+set_config=lora:dev_addr:{devAddr}", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -371,7 +372,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:nwks_Key {nwksKey}");
 #endif
-         result = SendCommand("OK", $"at+set_config=lora:nwks_key:{nwksKey}\r\n", CommandTimeoutDefault);
+         result = SendCommand("OK", $"at+set_config=lora:nwks_key:{nwksKey}", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -381,7 +382,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:apps_key {appsKey}");
 #endif
-         result = SendCommand("OK", $"at+set_config=lora:apps_key:{appsKey}\r\n", CommandTimeoutDefault);
+         result = SendCommand("OK", $"at+set_config=lora:apps_key:{appsKey}", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -411,7 +412,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:join_mode OTAA");
 #endif
-         result = SendCommand("OK", $"at+set_config=lora:join_mode:0\r\n", CommandTimeoutDefault);
+         result = SendCommand("OK", $"at+set_config=lora:join_mode:0", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -421,7 +422,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:dev_eui {devEui}");
 #endif
-         result = SendCommand("OK", $"at+set_config=lora:dev_eui:{devEui}\r\n", CommandTimeoutDefault);
+         result = SendCommand("OK", $"at+set_config=lora:dev_eui:{devEui}", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -431,7 +432,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:app_eui {appEui}");
 #endif
-         result = SendCommand("OK", $"at+set_config=lora:app_eui:{appEui}\r\n", CommandTimeoutDefault);
+         result = SendCommand("OK", $"at+set_config=lora:app_eui:{appEui}", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -441,7 +442,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} lora:app_key {appKey}");
 #endif
-         result = SendCommand("OK", $"at+set_config=lora:app_key:{appKey}\r\n", CommandTimeoutDefault);
+         result = SendCommand("OK", $"at+set_config=lora:app_key:{appKey}", CommandTimeoutDefault);
          if (result != Result.Success)
          {
             return result;
@@ -458,7 +459,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} join");
 #endif
-         result = SendCommand("OK Join Success", $"at+join\r\n", timeout);
+         result = SendCommand("OK Join Success", $"at+join", timeout);
          if (result != Result.Success)
          {
             return result;
@@ -475,7 +476,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} Send port:{port} payload {payload} timeout {timeout:hh:mm:ss}");
 #endif
-         result = SendCommand("OK", $"at+send=lora:{port}:{payload}\r\n", timeout);
+         result = SendCommand("OK", $"at+send=lora:{port}:{payload}", timeout);
          if (result != Result.Success)
          {
             return result;
@@ -493,7 +494,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} Send port:{port} payload {payloadBcd} timeout {timeout:hh:mm:ss}");
 #endif
-         result = SendCommand("OK", $"at+send=lora:{port}:{payloadBcd}\r\n", timeout);
+         result = SendCommand("OK", $"at+send=lora:{port}:{payloadBcd}", timeout);
          if (result != Result.Success)
          {
             return result;
@@ -506,7 +507,7 @@ namespace devMobile.IoT.LoRaWan
       {
          this.atCommandExpectedResponse = expectedResponse;
 
-         outputDataWriter.WriteString(command);
+         outputDataWriter.WriteString(command + EndOfLineMarker);
          outputDataWriter.Store();
 
          this.atExpectedEvent.Reset();
@@ -654,11 +655,11 @@ namespace devMobile.IoT.LoRaWan
             do
             {
                // extract a line
-               eol = response.IndexOf("\r\n");
+               eol = response.IndexOf(EndOfLineMarker);
 
                if (eol != -1)
                {
-                  string line = response.Substring(0, eol + "\r\n".Length);
+                  string line = response.Substring(0, eol + EndOfLineMarker.Length);
                   response = response.Substring(line.Length);
                   line = line.Trim();
 
