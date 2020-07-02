@@ -88,7 +88,7 @@ namespace devMobile.IoT.LoRaWan
       public const ushort NwsKeyLength = 32;
       public const ushort AppsKeyLength = 32;
 
-      private const int CommandTimeoutDefault = 3000;
+      private readonly TimeSpan CommandTimeoutDefault = new TimeSpan(0, 0, 3);
 
       private SerialDevice serialDevice = null;
       private TimeSpan ReadTimeoutDefault = new TimeSpan(0, 0, 1);
@@ -458,7 +458,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} join");
 #endif
-         result = SendCommand("OK Join Success", $"at+join\r\n", (int)timeout.TotalMilliseconds);
+         result = SendCommand("OK Join Success", $"at+join\r\n", timeout);
          if (result != Result.Success)
          {
             return result;
@@ -475,7 +475,7 @@ namespace devMobile.IoT.LoRaWan
 #if DIAGNOSTICS
          Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} Send port:{port} payload {payload} timeout {timeout:hh:mm:ss}");
 #endif
-         result = SendCommand("OK", $"at+send=lora:{port}:{payload}\r\n", (int)timeout.TotalMilliseconds);
+         result = SendCommand("OK", $"at+send=lora:{port}:{payload}\r\n", timeout);
          if (result != Result.Success)
          {
             return result;
@@ -491,9 +491,9 @@ namespace devMobile.IoT.LoRaWan
 
          // Send message the network
 #if DIAGNOSTICS
-         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} Send port:{port} payload {payload} timeout {timeout:hh:mm:ss}");
+         Debug.WriteLine($" {DateTime.UtcNow:hh:mm:ss} Send port:{port} payload {payloadBcd} timeout {timeout:hh:mm:ss}");
 #endif
-         result = SendCommand("OK", $"at+send=lora:{port}:{payloadBcd}\r\n", (int)timeout.TotalMilliseconds);
+         result = SendCommand("OK", $"at+send=lora:{port}:{payloadBcd}\r\n", timeout);
          if (result != Result.Success)
          {
             return result;
@@ -502,7 +502,7 @@ namespace devMobile.IoT.LoRaWan
          return Result.Success;
       }
 
-      private Result SendCommand(string expectedResponse, string command, int timeout)
+      private Result SendCommand(string expectedResponse, string command, TimeSpan timeout)
       {
          this.atCommandExpectedResponse = expectedResponse;
 
@@ -511,7 +511,7 @@ namespace devMobile.IoT.LoRaWan
 
          this.atExpectedEvent.Reset();
 
-         if (!this.atExpectedEvent.WaitOne(timeout, false))
+         if (!this.atExpectedEvent.WaitOne((int)timeout.TotalMilliseconds, false))
             return Result.ATResponseTimeout;
 
          this.atCommandExpectedResponse = string.Empty;
@@ -663,7 +663,7 @@ namespace devMobile.IoT.LoRaWan
                   line = line.Trim();
 
 #if DIAGNOSTICS
-                  Debug.WriteLine($" Line :{line} ATCommand:{atCommandExpectedResponse} Response:{response}");
+                  Debug.WriteLine($" Line :{line} ResponseExpected:{atCommandExpectedResponse} Response:{response}");
 #endif
                   int errorIndex = line.IndexOf("ERROR:");
                   if (errorIndex != -1)
@@ -751,6 +751,23 @@ namespace devMobile.IoT.LoRaWan
 
       public void Dispose()
       {
+         if (serialDevice != null)
+         {
+            serialDevice.Dispose();
+            serialDevice = null;
+         }
+
+         if ( inputDataReader != null)
+         {
+            inputDataReader.Dispose();
+            inputDataReader = null;
+         }
+
+         if (outputDataWriter != null)
+         {
+            outputDataWriter.Dispose();
+            outputDataWriter = null;
+         }
       }
    }
 }
