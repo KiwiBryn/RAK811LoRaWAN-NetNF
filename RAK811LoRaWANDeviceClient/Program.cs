@@ -16,7 +16,7 @@
 //---------------------------------------------------------------------------------
 #define ST_STM32F769I_DISCOVERY      // nanoff --target ST_STM32F769I_DISCOVERY --update 
 #define PAYLOAD_BCD
-#define PAYLOAD_BYTES
+//#define PAYLOAD_BYTES
 #define OTAA
 //#define ABP
 #define CONFIRMED
@@ -45,6 +45,8 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
       private const string AppsKey = "...";
 #endif
       private const string Region = "AS923";
+      private static readonly TimeSpan JoinTimeOut = new TimeSpan(0, 0, 10);
+      private static readonly TimeSpan SendTimeout = new TimeSpan(0, 0, 10);
       private const byte MessagePort = 1;
 #if PAYLOAD_BCD
       private const string PayloadBcd = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN in BCD
@@ -131,8 +133,8 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
                }
 #endif
 
-               Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Join start");
-               result = device.Join(new TimeSpan(0,0,10));
+               Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Join start Timeout:{JoinTimeOut:hh:mm:ss}");
+               result = device.Join(JoinTimeOut);
                if (result != Result.Success)
                {
                   Debug.WriteLine($"Join failed {result}");
@@ -143,12 +145,12 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
                while (true)
                {
 #if PAYLOAD_BCD
-                  Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send port:{MessagePort} payload BCD:{PayloadBcd}");
-                  result = device.Send(MessagePort, PayloadBcd, new TimeSpan(0,0,5));
+                  Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send Timeout:{SendTimeout:hh:mm:ss} port:{MessagePort} payload BCD:{PayloadBcd}");
+                  result = device.Send(MessagePort, PayloadBcd, SendTimeout);
 #endif
 #if PAYLOAD_BYTES
-                  Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send port:{MessagePort} payload Bytes:{BitConverter.ToString(PayloadBytes)}");
-                  result = device.Send(MessagePort, PayloadBytes, new TimeSpan(0,0,5));
+                  Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send Timeout:{SendTimeout:hh:mm:ss} port:{MessagePort} payload Bytes:{BitConverter.ToString(PayloadBytes)}");
+                  result = device.Send(MessagePort, PayloadBytes, SendTimeout);
 #endif
                   if (result != Result.Success)
                   {
@@ -193,7 +195,7 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
       {
          byte[] payloadBytes = Rak811LoRaWanDevice.BcdToByes(payloadBcd);
 
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Receive Message Port:{port} RSSI:{rssi} SNR:{snr} Payload:{payloadBcd} PayLoadBytes:{BitConverter.ToString(payloadBytes)}");
+         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Receive Message RSSI:{rssi} SNR:{snr} Port:{port} Payload:{payloadBcd} PayLoadBytes:{BitConverter.ToString(payloadBytes)}");
       }
    }
 }
