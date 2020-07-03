@@ -89,6 +89,8 @@ namespace devMobile.IoT.LoRaWan
       public const ushort AppsKeyLength = 32;
 
       private const string EndOfLineMarker = "\r\n";
+      private const string ErrorMarker = "ERROR:";
+      private const string ReplyMarker = "at+recv=";
       private readonly TimeSpan CommandTimeoutDefault = new TimeSpan(0, 0, 3);
 
       private SerialDevice serialDevice = null;
@@ -98,7 +100,7 @@ namespace devMobile.IoT.LoRaWan
       private DataWriter outputDataWriter = null;
 
       private string atCommandExpectedResponse;
-      private string response;
+      private StringBuilder response;
       private Result result;
       private readonly AutoResetEvent atExpectedEvent;
 
@@ -109,6 +111,7 @@ namespace devMobile.IoT.LoRaWan
 
       public Rak811LoRaWanDevice()
       {
+         response = new StringBuilder();
          this.atExpectedEvent = new AutoResetEvent(false);
       }
 
@@ -129,7 +132,6 @@ namespace devMobile.IoT.LoRaWan
          serialDevice.Handshake = SerialHandshake.None;
          serialDevice.WatchChar = '\n';
 
-         response = string.Empty;
          atCommandExpectedResponse = string.Empty;
 
          serialDevice.DataReceived += SerialDevice_DataReceived;
@@ -157,7 +159,7 @@ namespace devMobile.IoT.LoRaWan
             bytesRead = inputDataReader.Load(128);
             if (bytesRead > 0)
             {
-               response += inputDataReader.ReadString(bytesRead);
+               inputDataReader.ReadString(bytesRead);
                Debug.Write(".");
             }
          }
@@ -649,27 +651,25 @@ namespace devMobile.IoT.LoRaWan
                return;
             }
 
-            response += inputDataReader.ReadString(bytesRead);
+            response.Append(inputDataReader.ReadString(bytesRead));
 
-            int eol;
+            int eolPosition;
             do
             {
                // extract a line
-               eol = response.IndexOf(EndOfLineMarker);
+               eolPosition = response.ToString().IndexOf(EndOfLineMarker);
 
-               if (eol != -1)
+               if (eolPosition != -1)
                {
-                  string line = response.Substring(0, eol + EndOfLineMarker.Length);
-                  response = response.Substring(line.Length);
-                  line = line.Trim();
-
+                  string line = response.ToString(0, eolPosition);
+                  response = response.Remove(0, eolPosition + EndOfLineMarker.Length);
 #if DIAGNOSTICS
                   Debug.WriteLine($" Line :{line} ResponseExpected:{atCommandExpectedResponse} Response:{response}");
 #endif
-                  int errorIndex = line.IndexOf("ERROR:");
+                  int errorIndex = line.IndexOf(ErrorMarker);
                   if (errorIndex != -1)
                   {
-                     string errorNumber = line.Substring(errorIndex + "ERROR:".Length);
+                     string errorNumber = line.Substring(errorIndex + ErrorMarker.Length);
 
                      result = ModemErrorParser(errorNumber.Trim());
                      atExpectedEvent.Set();
@@ -685,7 +685,7 @@ namespace devMobile.IoT.LoRaWan
                      }
                   }
 
-                  int receivedMessageIndex = line.IndexOf("at+recv=");
+                  int receivedMessageIndex = line.IndexOf(ReplyMarker);
                   if (receivedMessageIndex != -1)
                   {
                      string[] fields = line.Split("=,:".ToCharArray());
@@ -711,7 +711,7 @@ namespace devMobile.IoT.LoRaWan
                   }
                }
             }
-            while (eol != -1);
+            while (eolPosition != -1);
          }
       }
 
