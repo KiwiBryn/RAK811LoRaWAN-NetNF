@@ -28,7 +28,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
    {
       private const string SerialPortId = "COM6";
       private const string devAddress = "";
-      private const string nwsKey = "";
+      private const string nwksKey = "";
       private const string appsKey = "";
       private const byte messagePort = 1;
       private const string payload = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN
@@ -133,7 +133,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
             }
 
             // Set the network session key
-            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:nwks_key:{nwsKey}\r\n");
+            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:nwks_key:{nwksKey}\r\n");
             Debug.WriteLine($"TX: nwks_key {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
