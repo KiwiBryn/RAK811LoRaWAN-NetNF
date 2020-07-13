@@ -105,7 +105,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
             }
 
             // Set the JoinMode to ABP
-            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:join_mode:1\r\n");
+            bytesWritten = outputDataWriter.WriteString("at+set_config=lora:join_mode:1\r\n");
             Debug.WriteLine($"TX: join_mode {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
@@ -161,7 +161,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
             }
 
             // Set the Confirm flag
-            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:confirm:0\r\n");
+            bytesWritten = outputDataWriter.WriteString("at+set_config=lora:confirm:0\r\n");
             Debug.WriteLine($"TX: confirm {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
@@ -176,7 +176,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
 
 
             // Join the network
-            bytesWritten = outputDataWriter.WriteString($"at+join\r\n");
+            bytesWritten = outputDataWriter.WriteString("at+join\r\n");
             Debug.WriteLine($"TX: join {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
