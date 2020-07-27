@@ -12,4 +12,4 @@ The repo has the source code for the series of blog posts written as I built thi
 06. [Inspired by the Arduino Library](https://blog.devmobile.co.nz/2020/06/27/nanoframework-rak811-lorawan-library-part6/)
 08. [Now with added callbacks](https://blog.devmobile.co.nz/2020/07/03/nanoframework-rak811-lorawan-library-part7/)
 
-![RAK811 EVB on nanoFrameowkr device](ST_STM32F769I_DISCOVERY-RAK811Working.jpg)
+![RAK811 EVB on nanoFramework device](ST_STM32F769I_DISCOVERY-RAK811Working.jpg)
