@@ -1,5 +1,5 @@
 # RAK811LoRaWAN-NetNF
-A C# library for [LoRaAlliance LoRaWAN](https://lora-alliance.org/about-lorawan) connectivity for [RAKwireless](https://www.rakwireless.com/en-us) [RAK811 Module](https://store.rakwireless.com/products/rak811-lpwan-module) equipped [.Net nanoFramework](https://nanoframework.net/) powered devices.
+A C# library for [LoRaWAN](https://lora-alliance.org/about-lorawan) connectivity for [RAKwireless](https://www.rakwireless.com/en-us) [RAK811 Module](https://store.rakwireless.com/products/rak811-lpwan-module) equipped [.NET nanoFramework](https://nanoframework.net/) powered devices.
 
 The repo has the source code for the series of blog posts written as I built this library
 
@@ -12,4 +12,4 @@ The repo has the source code for the series of blog posts written as I built thi
 06. [Inspired by the Arduino Library](https://blog.devmobile.co.nz/2020/06/27/nanoframework-rak811-lorawan-library-part6/)
 08. [Now with added callbacks](https://blog.devmobile.co.nz/2020/07/03/nanoframework-rak811-lorawan-library-part7/)
 
-![RAK811 EVB on nanoFrameowkr device](ST_STM32F769I_DISCOVERY-RAK811Working.jpg)
+![RAK811 EVB on nanoFramework device](ST_STM32F769I_DISCOVERY-RAK811Working.jpg)
