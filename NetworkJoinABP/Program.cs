@@ -27,11 +27,11 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
    public class Program
    {
       private const string SerialPortId = "COM6";
-      private const string devAddress = "";
-      private const string nwksKey = "";
-      private const string appsKey = "";
-      private const byte messagePort = 1;
-      private const string payload = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN
+      private const string DevAddress = "";
+      private const string NwksKey = "";
+      private const string AppsKey = "";
+      private const byte MessagePort = 1;
+      private const string Payload = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN
 
       public static void Main()
       {
@@ -119,7 +119,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
             }
 
             // Set the device address
-            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:dev_addr:{devAddress}\r\n");
+            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:dev_addr:{DevAddress}\r\n");
             Debug.WriteLine($"TX: dev_addr {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
@@ -133,7 +133,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
             }
 
             // Set the network session key
-            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:nwks_key:{nwksKey}\r\n");
+            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:nwks_key:{NwksKey}\r\n");
             Debug.WriteLine($"TX: nwks_key {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
@@ -147,7 +147,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
             }
 
             // Set the application session key
-            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:apps_key:{appsKey}\r\n");
+            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:apps_key:{AppsKey}\r\n");
             Debug.WriteLine($"TX: apps_key {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
@@ -193,7 +193,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
 
             while (true)
             {
-               bytesWritten = outputDataWriter.WriteString($"at+send=lora:{messagePort}:{payload}\r\n");
+               bytesWritten = outputDataWriter.WriteString($"at+send=lora:{MessagePort}:{Payload}\r\n");
                Debug.WriteLine($"TX: send {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
 
                // calling the 'Store' method on the data writer actually sends the data

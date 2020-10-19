@@ -27,11 +27,11 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
    public class Program
    {
       private const string SerialPortId = "COM6";
-      private const string devEui = "...";
-      private const string appEui = "...";
-      private const string appKey = "...";
-      private const byte messagePort = 1;
-      private const string payload = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN
+      private const string DevEui = "...";
+      private const string AppEui = "...";
+      private const string AppKey = "...";
+      private const byte MessagePort = 1;
+      private const string Payload = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN
 
       public static void Main()
       {
@@ -119,7 +119,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             }
 
             // OTAA set the devEUI
-            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:dev_eui:{devEui}\r\n");
+            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:dev_eui:{DevEui}\r\n");
             Debug.WriteLine($"TX: dev_eui {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
@@ -133,7 +133,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             }
 
             // Set the appEUI
-            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:app_eui:{appEui}\r\n");
+            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:app_eui:{AppEui}\r\n");
             Debug.WriteLine($"TX: app_eui {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
@@ -147,7 +147,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             }
 
             // Set the appKey
-            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:app_key:{appKey}\r\n");
+            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:app_key:{AppKey}\r\n");
             Debug.WriteLine($"TX: app_key {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
@@ -194,7 +194,7 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
 
             while (true)
             {
-               bytesWritten = outputDataWriter.WriteString($"at+send=lora:{messagePort}:{payload}\r\n");
+               bytesWritten = outputDataWriter.WriteString($"at+send=lora:{MessagePort}:{Payload}\r\n");
                Debug.WriteLine($"TX: send {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
 
                // calling the 'Store' method on the data writer actually sends the data
