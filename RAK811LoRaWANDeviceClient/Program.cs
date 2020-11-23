@@ -19,7 +19,7 @@
 //#define PAYLOAD_BYTES
 #define OTAA
 //#define ABP
-#define CONFIRMED
+//#define CONFIRMED
 namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 {
    using System;
