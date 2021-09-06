@@ -34,16 +34,6 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 #if ST_STM32F769I_DISCOVERY
       private const string SerialPortId = "COM6";
 #endif
-#if OTAA
-      private const string DevEui = "...";
-      private const string AppEui = "...";
-      private const string AppKey = "...";
-#endif
-#if ABP
-      private const string DevAddress = "...";
-      private const string NwksKey = "...";
-      private const string AppsKey = "...";
-#endif
       private const string Region = "AS923";
       private static readonly TimeSpan JoinTimeOut = new TimeSpan(0, 0, 10);
       private static readonly TimeSpan SendTimeout = new TimeSpan(0, 0, 10);
@@ -115,7 +105,7 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 
 #if OTAA
                Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} OTAA");
-               result = device.OtaaInitialise(DevEui, AppEui, AppKey);
+               result = device.OtaaInitialise(Config.AppEui, Config.AppKey);
                if (result != Result.Success)
                {
                   Debug.WriteLine($"OTAA Initialise failed {result}");
