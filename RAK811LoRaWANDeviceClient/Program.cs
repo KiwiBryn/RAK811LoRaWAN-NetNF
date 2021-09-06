@@ -19,7 +19,7 @@
 //#define PAYLOAD_BYTES
 #define OTAA
 //#define ABP
-#define CONFIRMED
+//#define CONFIRMED
 namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 {
    using System;
@@ -176,10 +176,12 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
          }
       }
 
+#if CONFIRMED
       static void OnMessageConfirmationHandler(int rssi, int snr)
       {
          Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send Confirm RSSI:{rssi} SNR:{snr}");
       }
+#endif
 
       static void OnReceiveMessageHandler(int port, int rssi, int snr, string payloadBcd)
       {
