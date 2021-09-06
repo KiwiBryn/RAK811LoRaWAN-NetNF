@@ -68,12 +68,10 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
             bytesRead = inputDataReader.Load(128);
             while (bytesRead > 0)
             {
+               string response = inputDataReader.ReadString(bytesRead);
+               Debug.WriteLine($"RX :{response}");
+
                bytesRead = inputDataReader.Load(128);
-               if (bytesRead > 0)
-               {
-                  string response = inputDataReader.ReadString(bytesRead);
-                  Debug.WriteLine($"RX :{response}");
-               }
             }
 
             // Set the Working mode to LoRaWAN
@@ -183,12 +181,12 @@ namespace devMobile.IoT.Rak811.NetworkJoinABP
 
             // Read the response
             bytesRead = inputDataReader.Load(128);
-            while (bytesRead == 0)
+            while (bytesRead >= 0)
             {
-               bytesRead = inputDataReader.Load(128);
-
                String response = inputDataReader.ReadString(bytesRead);
                Debug.WriteLine($"RX :{response}");
+
+               bytesRead = inputDataReader.Load(128);
             }
 
             while (true)
