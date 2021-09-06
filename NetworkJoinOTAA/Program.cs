@@ -27,9 +27,8 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
    public class Program
    {
       private const string SerialPortId = "COM6";
-      private const string DevEui = "...";
-      private const string AppEui = "...";
-      private const string AppKey = "...";
+      private const string AppEui = "70B3D57ED003067E";
+      private const string AppKey = "DF6A39930887CE1510C5EA5E4C7CFAD1";
       private const byte MessagePort = 1;
       private const string Payload = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN
 
@@ -68,12 +67,10 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             bytesRead = inputDataReader.Load(128);
             while (bytesRead > 0)
             {
+               string response = inputDataReader.ReadString(bytesRead);
+               Debug.WriteLine($"RX :{response}");
+
                bytesRead = inputDataReader.Load(128);
-               if (bytesRead > 0)
-               {
-                  string response = inputDataReader.ReadString(bytesRead);
-                  Debug.WriteLine($"RX :{response}");
-               }
             }
 
             // Set the Working mode to LoRaWAN
@@ -107,20 +104,6 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
             // Set the JoinMode
             bytesWritten = outputDataWriter.WriteString("at+set_config=lora:join_mode:0\r\n");
             Debug.WriteLine($"TX: join_mode {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
-            txByteCount = outputDataWriter.Store();
-            Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
-
-            // Read the response
-            bytesRead = inputDataReader.Load(128);
-            if (bytesRead > 0)
-            {
-               String response = inputDataReader.ReadString(bytesRead);
-               Debug.WriteLine($"RX :{response}");
-            }
-
-            // OTAA set the devEUI
-            bytesWritten = outputDataWriter.WriteString($"at+set_config=lora:dev_eui:{DevEui}\r\n");
-            Debug.WriteLine($"TX: dev_eui {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
             txByteCount = outputDataWriter.Store();
             Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
 
@@ -184,12 +167,12 @@ namespace devMobile.IoT.Rak811.NetworkJoinOTAA
 
             // Read the response
             bytesRead = inputDataReader.Load(128);
-            while (bytesRead == 0)
+            while (bytesRead > 0)
             {
-               bytesRead = inputDataReader.Load(128);
-
                String response = inputDataReader.ReadString(bytesRead);
                Debug.WriteLine($"RX :{response}");
+
+               bytesRead = inputDataReader.Load(128);
             }
 
             while (true)
