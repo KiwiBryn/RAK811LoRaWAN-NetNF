@@ -16,6 +16,7 @@
 //---------------------------------------------------------------------------------
 // nanoff --target ST_STM32F769I_DISCOVERY --update
 //#define SERIAL_SYNC_READ
+//#define SERIAL_ASYNC_READ
 //#define HARDWARE_RESET
 //#define SOFTWARE_RESTART
 //#define DEVICE_STATUS
@@ -24,22 +25,26 @@ namespace devMobile.IoT.Rak811.FactoryReset
 {
    using System;
    using System.Diagnostics;
+   using System.IO.Ports;
    using System.Threading;
+#if HARDWARE_RESET
    using Windows.Devices.Gpio;
-   using Windows.Devices.SerialCommunication;
-   using Windows.Storage.Streams;
-   
+#endif
+  
    public class Program
    {
       private const string SerialPortId = "COM6";
 
       public static void Main()
       {
-         SerialDevice serialDevice;
-
          Debug.WriteLine("devMobile.IoT.Rak811.FactoryReset starting");
 
-         Debug.WriteLine(Windows.Devices.SerialCommunication.SerialDevice.GetDeviceSelector());
+         Debug.Write("Ports:");
+         foreach (string port in SerialPort.GetPortNames())
+         {
+            Debug.Write($" {port}");
+         }
+         Debug.WriteLine("");
 
          try
          {
@@ -48,78 +53,59 @@ namespace devMobile.IoT.Rak811.FactoryReset
             resetPin.SetDriveMode(GpioPinDriveMode.Output);
             resetPin.Write(GpioPinValue.Low);
 #endif
-            serialDevice = SerialDevice.FromId(SerialPortId);
 
-            // set parameters
-            serialDevice.BaudRate = 9600;
-            serialDevice.Parity = SerialParity.None;
-            serialDevice.StopBits = SerialStopBitCount.One;
-            serialDevice.Handshake = SerialHandshake.None;
-            serialDevice.DataBits = 8;
+            using (SerialPort serialDevice = new SerialPort(SerialPortId))
+            {
+               // set parameters
+               serialDevice.BaudRate = 9600;
+               serialDevice.Parity = Parity.None;
+               serialDevice.StopBits = StopBits.One;
+               serialDevice.Handshake = Handshake.None;
+               serialDevice.DataBits = 8;
 
-            serialDevice.ReadTimeout = new TimeSpan(0, 0, 30);
-            serialDevice.WriteTimeout = new TimeSpan(0, 0, 4);
+               serialDevice.ReadTimeout = 5000;
 
-            DataWriter outputDataWriter = new DataWriter(serialDevice.OutputStream);
+               serialDevice.NewLine = "\r\n";
 
-#if SERIAL_SYNC_READ
-            DataReader inputDataReader = new DataReader(serialDevice.InputStream);
-#else
-            serialDevice.DataReceived += SerialDevice_DataReceived;
+               serialDevice.Open();
+
+#if SERIAL_ASYNC_READ
+               serialDevice.DataReceived += SerialDevice_DataReceived;
+
+               // set a watch char to be notified when it's available in the input stream
+               serialDevice.WatchChar = '\n';
 #endif
 
-            // set a watch char to be notified when it's available in the input stream
-            serialDevice.WatchChar = '\n';
-
-            while (true)
-            {
+               while (true)
+               {
 #if HARDWARE_RESET
-               resetPin.Write(GpioPinValue.High);
-               Thread.Sleep(10);
-               resetPin.Write(GpioPinValue.Low);
+                  resetPin.Write(GpioPinValue.High);
+                  Thread.Sleep(10);
+                  resetPin.Write(GpioPinValue.Low);
 #endif
 
 #if SOFTWARE_RESTART
-               uint bytesWritten = outputDataWriter.WriteString("at+set_config=device:restart\r\n");
-               Debug.WriteLine($"TX: {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
-
-               // calling the 'Store' method on the data writer actually sends the data
-               uint txByteCount = outputDataWriter.Store();
-               Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
+                  serialDevice.WriteLine("at+set_config=device:restart");
 #endif
 
 #if DEVICE_STATUS
-               uint bytesWritten = outputDataWriter.WriteString("at+get_config=device:status\r\n");
-               Debug.WriteLine($"TX: {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
-
-               // calling the 'Store' method on the data writer actually sends the data
-               uint txByteCount = outputDataWriter.Store();
-               Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
+                  serialDevice.WriteLine("at+get_config=device:status");
 #endif
 
 #if LORA_STATUS
-               uint bytesWritten = outputDataWriter.WriteString("at+get_config=lora:status\r\n");
-               Debug.WriteLine($"TX: {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
-
-               // calling the 'Store' method on the data writer actually sends the data
-               uint txByteCount = outputDataWriter.Store();
-               Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
+                  serialDevice.WriteLine("at+get_config=lora:status");
 #endif
 
 #if SERIAL_SYNC_READ
-               // June 2020 appears to be limited to 256 chars
-               uint bytesRead = inputDataReader.Load(50);
+                  Thread.Sleep(500);
 
-               Debug.WriteLine($"RXs :{bytesRead} bytes read from {serialDevice.PortName}");
+                  string response = serialDevice.ReadExisting();
 
-               if (bytesRead > 0)
-               {
-                  String response = inputDataReader.ReadString(bytesRead);
-                  Debug.WriteLine($"RX sync:{response}");
-               }
+                  Debug.WriteLine($"RX :{response.Trim()} bytes:{response.Length} read from {serialDevice.PortName}");
 #endif
 
-               Thread.Sleep(20000);
+                  Thread.Sleep(20000);
+               }
             }
          }
          catch (Exception ex)
@@ -128,9 +114,10 @@ namespace devMobile.IoT.Rak811.FactoryReset
          }
       }
 
+#if SERIAL_ASYNC_READ
       private static void SerialDevice_DataReceived(object sender, SerialDataReceivedEventArgs e)
       {
-         switch (e.EventType)
+         switch(e.EventType)
          {
             case SerialData.Chars:
                //Debug.WriteLine("RX SerialData.Chars");
@@ -138,29 +125,20 @@ namespace devMobile.IoT.Rak811.FactoryReset
 
             case SerialData.WatchChar:
                Debug.WriteLine("RX: SerialData.WatchChar");
-               SerialDevice serialDevice = (SerialDevice)sender;
+               SerialPort serialDevice = (SerialPort)sender;
 
-               using (DataReader inputDataReader = new DataReader(serialDevice.InputStream))
-               {
-                  inputDataReader.InputStreamOptions = InputStreamOptions.Partial;
+               string response = serialDevice.ReadExisting();
 
-                  // read all available bytes from the Serial Device input stream
-                  uint bytesRead = inputDataReader.Load(serialDevice.BytesToRead);
-
-                  Debug.WriteLine($"RXa: {bytesRead} bytes read from {serialDevice.PortName}");
-
-                  if (bytesRead > 0)
-                  {
-                     String response = inputDataReader.ReadString(bytesRead);
-                     Debug.WriteLine($"RX:{response}");
-                  }
-               }
+               Debug.WriteLine($"RX :{response.Trim()} bytes:{response.Length} read from {serialDevice.PortName}");
                break;
             default:
                Debug.Assert(false, $"e.EventType {e.EventType} unknown");
                break;
          }
       }
+#endif
+
+#if HARDWARE_RESET
       static int PinNumber(char port, byte pin)
       {
          if (port < 'A' || port > 'J')
@@ -168,5 +146,6 @@ namespace devMobile.IoT.Rak811.FactoryReset
 
          return ((port - 'A') * 16) + pin;
       }
+#endif
    }
 }
