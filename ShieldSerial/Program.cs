@@ -14,7 +14,8 @@
 // limitations under the License.
 //
 //---------------------------------------------------------------------------------
-//#define SERIAL_SYNC_READ
+#define SERIAL_SYNC_READ
+//#define SERIAL_ASYNC_READ
 //#define ESP32_WROOM   //nanoff --target ESP32_WROOM_32 --serialport COM4 --update
 // June 2020 experiencing issues with ComPort assignments
 //#define NETDUINO3_WIFI   // nanoff --target NETDUINO3_WIFI --update
@@ -27,9 +28,8 @@ namespace devMobile.IoT.Rak811.ShieldSerial
 {
    using System;
    using System.Diagnostics;
+   using System.IO.Ports;
    using System.Threading;
-   using Windows.Devices.SerialCommunication;
-   using Windows.Storage.Streams;
 
 #if ESP32_WROOM_32_LORA_1_CHANNEL
    using nanoFramework.Hardware.Esp32;
@@ -61,64 +61,58 @@ namespace devMobile.IoT.Rak811.ShieldSerial
 
       public static void Main()
       {
-         SerialDevice serialDevice;
+         SerialPort serialDevice;
 
          Debug.WriteLine("devMobile.IoT.Rak811.ShieldSerial starting");
 
-         Debug.WriteLine(Windows.Devices.SerialCommunication.SerialDevice.GetDeviceSelector());
+         Debug.Write("Ports:");
+         foreach (string port in SerialPort.GetPortNames())
+         {
+            Debug.Write($" {port}");
+         }
+         Debug.WriteLine("");
 
          try
          {
             // set GPIO functions for COM2 (this is UART1 on ESP32)
-            #if ESP32_WROOM
-               Configuration.SetPinFunction(Gpio.IO04, DeviceFunction.COM2_TX);
-               Configuration.SetPinFunction(Gpio.IO05, DeviceFunction.COM2_RX);
-            #endif
-            serialDevice = SerialDevice.FromId(SerialPortId);
-
-            // set parameters
-            serialDevice.BaudRate = 9600;
-            serialDevice.Parity = SerialParity.None;
-            serialDevice.StopBits = SerialStopBitCount.One;
-            serialDevice.Handshake = SerialHandshake.None;
-            serialDevice.DataBits = 8;
-
-            serialDevice.ReadTimeout = new TimeSpan(0, 0, 30);
-            serialDevice.WriteTimeout = new TimeSpan(0, 0, 4);
-
-            DataWriter outputDataWriter = new DataWriter(serialDevice.OutputStream);
-
-            #if SERIAL_SYNC_READ
-               DataReader inputDataReader = new DataReader(serialDevice.InputStream);
-            #else
-               serialDevice.DataReceived += SerialDevice_DataReceived;
-            #endif
-
-            // set a watch char to be notified when it's available in the input stream
-            serialDevice.WatchChar = '\n';
-
-            while (true)
+#if ESP32_WROOM
+            Configuration.SetPinFunction(Gpio.IO04, DeviceFunction.COM2_TX);
+            Configuration.SetPinFunction(Gpio.IO05, DeviceFunction.COM2_RX);
+#endif
+            using (serialDevice = new SerialPort(SerialPortId))
             {
-               uint bytesWritten = outputDataWriter.WriteString("at+version\r\n");
-               Debug.WriteLine($"TX: {outputDataWriter.UnstoredBufferLength} bytes to output stream.");
 
-               // calling the 'Store' method on the data writer actually sends the data
-               uint txByteCount = outputDataWriter.Store();
-               Debug.WriteLine($"TX: {txByteCount} bytes via {serialDevice.PortName}");
+               // set parameters
+               serialDevice.BaudRate = 9600;
+               serialDevice.Parity = Parity.None;
+               serialDevice.StopBits = StopBits.One;
+               serialDevice.Handshake = Handshake.None;
+               serialDevice.DataBits = 8;
 
-#if SERIAL_SYNC_READ
-               uint bytesRead = inputDataReader.Load(50);
+               serialDevice.ReadTimeout = 1000;
 
-               Debug.WriteLine($"RXs :{bytesRead} bytes read from {serialDevice.PortName}");
+               serialDevice.NewLine = "\r\n";
 
-               if (bytesRead > 0)
-               {
-                  String response = inputDataReader.ReadString(bytesRead);
-                  Debug.WriteLine($"RX sync:{response}");
-               }
+               serialDevice.Open();
+
+#if SERIAL_ASYNC_READ
+               serialDevice.DataReceived += SerialDevice_DataReceived;
 #endif
 
-               Thread.Sleep(20000);
+               // set a watch char to be notified when it's available in the input stream
+               serialDevice.WatchChar = '\n';
+
+               while (true)
+               {
+                  serialDevice.WriteLine("at+version");
+
+#if SERIAL_SYNC_READ
+                  string response = serialDevice.ReadLine();
+
+                  Debug.WriteLine($"RX :{response.Trim()} bytes:{response.Length} read from {serialDevice.PortName}");
+#endif
+                  Thread.Sleep(20000);
+               }
             }
          }
          catch (Exception ex)
@@ -127,6 +121,7 @@ namespace devMobile.IoT.Rak811.ShieldSerial
          }
       }
 
+#if SERIAL_ASYNC_READ
       private static void SerialDevice_DataReceived(object sender, SerialDataReceivedEventArgs e)
       {
          switch(e.EventType)
@@ -137,28 +132,17 @@ namespace devMobile.IoT.Rak811.ShieldSerial
 
             case SerialData.WatchChar:
                Debug.WriteLine("RX: SerialData.WatchChar");
-               SerialDevice serialDevice = (SerialDevice)sender;
+               SerialPort serialDevice = (SerialPort)sender;
 
-               using (DataReader inputDataReader = new DataReader(serialDevice.InputStream))
-               {
-                  inputDataReader.InputStreamOptions = InputStreamOptions.Partial;
+               string response = serialDevice.ReadExisting();
 
-                  // read all available bytes from the Serial Device input stream
-                  uint bytesRead = inputDataReader.Load(serialDevice.BytesToRead);
-
-                  Debug.WriteLine($"RXa: {bytesRead} bytes read from {serialDevice.PortName}");
-
-                  if (bytesRead > 0)
-                  {
-                     String response = inputDataReader.ReadString(bytesRead);
-                     Debug.WriteLine($"RX:{response}");
-                  }
-               }
+               Debug.WriteLine($"RX :{response.Trim()} bytes:{response.Length} read from {serialDevice.PortName}");
                break;
             default:
                Debug.Assert(false, $"e.EventType {e.EventType} unknown");
                break;
          }
       }
+#endif
    }
 }
