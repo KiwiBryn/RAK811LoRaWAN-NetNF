@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 //---------------------------------------------------------------------------------
-#define SERIAL_SYNC_READ
-//#define SERIAL_ASYNC_READ
+//#define SERIAL_SYNC_READ
+#define SERIAL_ASYNC_READ
 //#define ESP32_WROOM   //nanoff --target ESP32_WROOM_32 --serialport COM4 --update
 // June 2020 experiencing issues with ComPort assignments
 //#define NETDUINO3_WIFI   // nanoff --target NETDUINO3_WIFI --update
@@ -102,9 +102,14 @@ namespace devMobile.IoT.Rak811.ShieldSerial
                // set a watch char to be notified when it's available in the input stream
                serialDevice.WatchChar = '\n';
 
+               // Un comment so sent before work_mode and everything works as expected
+               //serialDevice.WriteLine("at+version");
+
                while (true)
                {
-                  serialDevice.WriteLine("at+version");
+                  //serialDevice.WriteLine("at+version");
+                  Debug.WriteLine("-----------------------------");
+                  serialDevice.WriteLine("at+set_config=lora:work_mode:0");
 
 #if SERIAL_SYNC_READ
                   string response = serialDevice.ReadLine();
@@ -134,6 +139,9 @@ namespace devMobile.IoT.Rak811.ShieldSerial
                Debug.WriteLine("RX: SerialData.WatchChar");
                SerialPort serialDevice = (SerialPort)sender;
 
+               // Uncomment this to see buffer size ebb and flow
+               //Debug.WriteLine($"RX: SerialData.WatchChar Bytes:{serialDevice.BytesToRead}");
+               
                string response = serialDevice.ReadExisting();
 
                Debug.WriteLine($"RX :{response.Trim()} bytes:{response.Length} read from {serialDevice.PortName}");
