@@ -28,7 +28,7 @@ namespace devMobile.IoT.Rak811.FactoryReset
    using System.IO.Ports;
    using System.Threading;
 #if HARDWARE_RESET
-   using Windows.Devices.Gpio;
+   using System.Device.Gpio;
 #endif
   
    public class Program
@@ -38,7 +38,10 @@ namespace devMobile.IoT.Rak811.FactoryReset
       public static void Main()
       {
          Debug.WriteLine("devMobile.IoT.Rak811.FactoryReset starting");
-
+#if HARDWARE_RESET
+         GpioController gpioController = new GpioController();
+#endif
+      
          Debug.Write("Ports:");
          foreach (string port in SerialPort.GetPortNames())
          {
@@ -49,9 +52,9 @@ namespace devMobile.IoT.Rak811.FactoryReset
          try
          {
 #if HARDWARE_RESET
-            GpioPin resetPin = GpioController.GetDefault().OpenPin(PinNumber('J', 4));
-            resetPin.SetDriveMode(GpioPinDriveMode.Output);
-            resetPin.Write(GpioPinValue.Low);
+            GpioPin resetPin = gpioController.OpenPin(PinNumber('J', 4));
+            gpioController.SetPinMode(resetPin.PinNumber, PinMode.Output);
+            resetPin.Write(PinValue.Low);
 #endif
 
             using (SerialPort serialDevice = new SerialPort(SerialPortId))
@@ -79,9 +82,9 @@ namespace devMobile.IoT.Rak811.FactoryReset
                while (true)
                {
 #if HARDWARE_RESET
-                  resetPin.Write(GpioPinValue.High);
+                  resetPin.Write(PinValue.High);
                   Thread.Sleep(10);
-                  resetPin.Write(GpioPinValue.Low);
+                  resetPin.Write(PinValue.Low);
 #endif
 
 #if SOFTWARE_RESTART
