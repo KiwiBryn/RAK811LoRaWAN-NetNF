@@ -22,68 +22,73 @@
 //#define CONFIRMED
 namespace devMobile.IoT.Rak811LoRaWanDeviceClient
 {
-   using System;
-   using System.Threading;
-   using System.Diagnostics;
-   using Windows.Devices.SerialCommunication;
+	using System;
+	using System.Threading;
+	using System.Diagnostics;
+	using System.IO.Ports;
 
-   using devMobile.IoT.LoRaWan;
+	using devMobile.IoT.LoRaWan;
 
-   public class Program
-   {
+	public class Program
+	{
 #if ST_STM32F769I_DISCOVERY
-      private const string SerialPortId = "COM6";
+		private const string SerialPortId = "COM6";
 #endif
-      private const string Region = "AS923";
-      private static readonly TimeSpan JoinTimeOut = new TimeSpan(0, 0, 10);
-      private static readonly TimeSpan SendTimeout = new TimeSpan(0, 0, 10);
-      private const byte MessagePort = 1;
+		private const string Region = "AS923";
+		private static readonly TimeSpan JoinTimeOut = new TimeSpan(0, 0, 10);
+		private static readonly TimeSpan SendTimeout = new TimeSpan(0, 0, 10);
+		private const byte MessagePort = 1;
 #if PAYLOAD_BCD
-      private const string PayloadBcd = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN in BCD
+		private const string PayloadBcd = "48656c6c6f204c6f526157414e"; // Hello LoRaWAN in BCD
 #endif
 #if PAYLOAD_BYTES
       private static readonly byte[] PayloadBytes = { 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x4c, 0x6f, 0x52, 0x61, 0x57, 0x41, 0x4e}; // Hello LoRaWAN in bytes
 #endif
 
-      public static void Main()
-      {
-         Result result;
+		public static void Main()
+		{
+			Result result;
 
-         Debug.WriteLine("devMobile.IoT.Rak811LoRaWanDeviceClient starting");
+			Debug.WriteLine("devMobile.IoT.Rak811LoRaWanDeviceClient starting");
 
-         Debug.WriteLine($"Ports :{Windows.Devices.SerialCommunication.SerialDevice.GetDeviceSelector()}");
+			Debug.Write("Ports:");
+			foreach (string port in SerialPort.GetPortNames())
+			{
+				Debug.Write($" {port}");
+			}
+			Debug.WriteLine("");
 
-         try
-         {
-            using ( Rak811LoRaWanDevice device = new Rak811LoRaWanDevice())
-            {
-               result = device.Initialise(SerialPortId, 9600, SerialParity.None, 8, SerialStopBitCount.One);
-               if (result != Result.Success)
-               {
-                  Debug.WriteLine($"Initialise failed {result}");
-                  return;
-               }
+			try
+			{
+				using (Rak811LoRaWanDevice device = new Rak811LoRaWanDevice())
+				{
+					result = device.Initialise(SerialPortId, 9600, Parity.None, 8, StopBits.One);
+					if (result != Result.Success)
+					{
+						Debug.WriteLine($"Initialise failed {result}");
+						return;
+					}
 
 #if CONFIRMED
                device.OnMessageConfirmation += OnMessageConfirmationHandler;
 #endif
-               device.OnReceiveMessage += OnReceiveMessageHandler;
+					device.OnReceiveMessage += OnReceiveMessageHandler;
 
-               Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Region {Region}");
-               result = device.Region(Region);
-               if (result != Result.Success)
-               {
-                  Debug.WriteLine($"Region failed {result}");
-                  return;
-               }
+					Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Region {Region}");
+					result = device.Region(Region);
+					if (result != Result.Success)
+					{
+						Debug.WriteLine($"Region failed {result}");
+						return;
+					}
 
-               Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} ADR On");
-               result = device.AdrOn();
-               if (result != Result.Success)
-               {
-                  Debug.WriteLine($"ADR on failed {result}");
-                  return;
-               }
+					Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} ADR On");
+					result = device.AdrOn();
+					if (result != Result.Success)
+					{
+						Debug.WriteLine($"ADR on failed {result}");
+						return;
+					}
 
 #if CONFIRMED
                Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Confirmed");
@@ -94,23 +99,23 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
                   return;
                }
 #else
-               Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Unconfirmed");
-               result = device.Confirm(LoRaConfirmType.Unconfirmed);
-               if (result != Result.Success)
-               {
-                  Debug.WriteLine($"Confirm off failed {result}");
-                  return;
-               }
+					Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Unconfirmed");
+					result = device.Confirm(LoRaConfirmType.Unconfirmed);
+					if (result != Result.Success)
+					{
+						Debug.WriteLine($"Confirm off failed {result}");
+						return;
+					}
 #endif
 
 #if OTAA
-               Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} OTAA");
-               result = device.OtaaInitialise(Config.AppEui, Config.AppKey);
-               if (result != Result.Success)
-               {
-                  Debug.WriteLine($"OTAA Initialise failed {result}");
-                  return;
-               }
+					Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} OTAA");
+					result = device.OtaaInitialise(Config.AppEui, Config.AppKey);
+					if (result != Result.Success)
+					{
+						Debug.WriteLine($"OTAA Initialise failed {result}");
+						return;
+					}
 #endif
 
 #if ABP
@@ -123,58 +128,63 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
                }
 #endif
 
-               Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Join start Timeout:{JoinTimeOut:hh:mm:ss}");
-               result = device.Join(JoinTimeOut);
-               if (result != Result.Success)
-               {
-                  Debug.WriteLine($"Join failed {result}");
-                  return;
-               }
-               Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Join finish");
+					Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Join start Timeout:{JoinTimeOut:hh:mm:ss}");
+					result = device.Join(JoinTimeOut);
+					if (result != Result.Success)
+					{
+						Debug.WriteLine($"Join failed {result}");
+						return;
+					}
+					Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Join finish");
 
-               while (true)
-               {
+					while (true)
+					{
 #if PAYLOAD_BCD
-                  Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send Timeout:{SendTimeout:hh:mm:ss} port:{MessagePort} payload BCD:{PayloadBcd}");
-                  result = device.Send(MessagePort, PayloadBcd, SendTimeout);
+						Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send Timeout:{SendTimeout:hh:mm:ss} port:{MessagePort} payload BCD:{PayloadBcd}");
+						result = device.Send(MessagePort, PayloadBcd, SendTimeout);
 #endif
 #if PAYLOAD_BYTES
                   Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Send Timeout:{SendTimeout:hh:mm:ss} port:{MessagePort} payload Bytes:{BitConverter.ToString(PayloadBytes)}");
                   result = device.Send(MessagePort, PayloadBytes, SendTimeout);
 #endif
-                  if (result != Result.Success)
-                  {
-                     Debug.WriteLine($"Send failed {result}");
-                  }
+						if (result != Result.Success)
+						{
+							Debug.WriteLine($"Send failed {result}");
+						}
 
-                  // if we sleep module too soon response is missed
-                  Thread.Sleep(new TimeSpan( 0,0,5));
+						/*
+						// if we sleep module too soon response is missed
+						Thread.Sleep(new TimeSpan(0,0,5));
 
-                  Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Sleep");
-                  result = device.Sleep();
-                  if (result != Result.Success)
-                  {
-                     Debug.WriteLine($"Sleep failed {result}");
-                     return;
-                  }
+						Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Sleep");
+						result = device.Sleep();
+						if (result != Result.Success)
+						{
+							Debug.WriteLine($"Sleep failed {result}");
+							return;
+						}
+						*/
+						Thread.Sleep(new TimeSpan(0, 5, 0));
+						/*
+						Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Wakeup");
+						result = device.Wakeup();
+						if (result != Result.Success)
+						{
+							Debug.WriteLine($"Wakeup failed {result}");
+							return;
+						}
 
-                  Thread.Sleep(new TimeSpan(0, 5, 0));
-
-                  Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Wakeup");
-                  result = device.Wakeup();
-                  if (result != Result.Success)
-                  {
-                     Debug.WriteLine($"Wakeup failed {result}");
-                     return;
-                  }
-               }
-            }
-         }
-         catch (Exception ex)
-         {
-            Debug.WriteLine(ex.Message);
-         }
-      }
+						// if we send too soon after wakeup issues
+						Thread.Sleep(new TimeSpan(0, 0, 10));
+						*/
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine(ex.Message);
+			}
+		}
 
 #if CONFIRMED
       static void OnMessageConfirmationHandler(int rssi, int snr)
@@ -183,11 +193,11 @@ namespace devMobile.IoT.Rak811LoRaWanDeviceClient
       }
 #endif
 
-      static void OnReceiveMessageHandler(int port, int rssi, int snr, string payloadBcd)
-      {
-         byte[] payloadBytes = Rak811LoRaWanDevice.BcdToByes(payloadBcd);
+		static void OnReceiveMessageHandler(int port, int rssi, int snr, string payloadBcd)
+		{
+			byte[] payloadBytes = Rak811LoRaWanDevice.BcdToByes(payloadBcd);
 
-         Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Receive Message RSSI:{rssi} SNR:{snr} Port:{port} Payload:{payloadBcd} PayLoadBytes:{BitConverter.ToString(payloadBytes)}");
-      }
-   }
+			Debug.WriteLine($"{DateTime.UtcNow:hh:mm:ss} Receive Message RSSI:{rssi} SNR:{snr} Port:{port} Payload:{payloadBcd} PayLoadBytes:{BitConverter.ToString(payloadBytes)}");
+		}
+	}
 }
