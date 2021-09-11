@@ -19,11 +19,9 @@ namespace devMobile.IoT.LoRaWan
 {
    using System;
    using System.Diagnostics;
+   using System.IO.Ports;
    using System.Text;
    using System.Threading;
-
-   using Windows.Devices.SerialCommunication;
-   using Windows.Storage.Streams;
 
    public enum LoRaClass
    {
@@ -98,15 +96,11 @@ namespace devMobile.IoT.LoRaWan
       public const ushort RegionIDMinimumLength = 3;
       public const ushort RegionIDMaximumLength = 3;
 
-      private const string EndOfLineMarker = "\r\n";
       private const string ErrorMarker = "ERROR:";
       private const string ReplyMarker = "at+recv=";
       private readonly TimeSpan CommandTimeoutDefault = new TimeSpan(0, 0, 3);
 
-      private SerialDevice serialDevice = null;
-      private TimeSpan ReadTimeoutDefault = new TimeSpan(0, 0, 1);
-      private TimeSpan WriteTimeoutDefault = new TimeSpan(0, 0, 2);
-      private DataWriter outputDataWriter = null;
+      private SerialPort serialDevice = null;
 
       private string atCommandExpectedResponse;
       private readonly AutoResetEvent atExpectedEvent;
@@ -120,12 +114,11 @@ namespace devMobile.IoT.LoRaWan
 
       public Rak811LoRaWanDevice()
       {
-         response = new StringBuilder();
+         response = new StringBuilder(512);
          this.atExpectedEvent = new AutoResetEvent(false);
       }
 
-      public Result Initialise(string serialPortId, uint baudRate, SerialParity serialParity, ushort dataBits, SerialStopBitCount stopBitCount,
-         TimeSpan readTimeout = default, TimeSpan writeTimeout = default)
+      public Result Initialise(string serialPortId, int baudRate, Parity serialParity, ushort dataBits, StopBits stopBitCount)
       {
          Result result;
          if ((serialPortId == null) || (serialPortId == ""))
@@ -137,31 +130,25 @@ namespace devMobile.IoT.LoRaWan
             throw new ArgumentException("Invalid BaudRate", "baudRate");
          }
 
-         serialDevice = SerialDevice.FromId(serialPortId);
+         serialDevice = new SerialPort(serialPortId);
 
          // set parameters
          serialDevice.BaudRate = baudRate;
          serialDevice.Parity = serialParity;
          serialDevice.DataBits = dataBits;
          serialDevice.StopBits = stopBitCount;
-         serialDevice.Handshake = SerialHandshake.None;
-         serialDevice.WatchChar = '\n';
+         serialDevice.Handshake = Handshake.None;
+         serialDevice.NewLine = "\r\n";
 
          atCommandExpectedResponse = string.Empty;
 
          serialDevice.DataReceived += SerialDevice_DataReceived;
 
-         if (readTimeout == default)
-         {
-            serialDevice.ReadTimeout = ReadTimeoutDefault;
-         }
+         serialDevice.Open();
+         serialDevice.WatchChar = '\n';
 
-         if (writeTimeout == default)
-         {
-            serialDevice.WriteTimeout = WriteTimeoutDefault;
-         }
-
-         outputDataWriter = new DataWriter(serialDevice.OutputStream);
+         // Get the version information
+         result = SendCommand("OK", $"at+version", CommandTimeoutDefault);
 
          // Set the Working mode to LoRaWAN
 #if DIAGNOSTICS
@@ -571,8 +558,7 @@ namespace devMobile.IoT.LoRaWan
 
          this.atCommandExpectedResponse = expectedResponse;
 
-         outputDataWriter.WriteString(command + EndOfLineMarker);
-         outputDataWriter.Store();
+         serialDevice.WriteLine(command);
 
          this.atExpectedEvent.Reset();
 
@@ -708,81 +694,70 @@ namespace devMobile.IoT.LoRaWan
             return;
          }
 
-         SerialDevice serialDevice = (SerialDevice)sender;
+         SerialPort serialDevice = (SerialPort)sender;
 
-         using (DataReader inputDataReader = new DataReader(serialDevice.InputStream))
+         response.Append(serialDevice.ReadExisting());
+
+         int eolPosition;
+         do
          {
-            inputDataReader.InputStreamOptions = InputStreamOptions.Partial;
+            // extract a line
+            eolPosition = response.ToString().IndexOf(serialDevice.NewLine);
 
-            // read all available bytes from the Serial Device input stream
-            var bytesRead = inputDataReader.Load(serialDevice.BytesToRead);
-            if (bytesRead == 0)
+            if (eolPosition != -1)
             {
-               return;
-            }
-
-            response.Append(inputDataReader.ReadString(bytesRead));
-
-            int eolPosition;
-            do
-            {
-               // extract a line
-               eolPosition = response.ToString().IndexOf(EndOfLineMarker);
-
-               if (eolPosition != -1)
-               {
-                  string line = response.ToString(0, eolPosition);
-                  response = response.Remove(0, eolPosition + EndOfLineMarker.Length);
+               string line = response.ToString(0, eolPosition);
+               response = response.Remove(0, eolPosition + serialDevice.NewLine.Length);
 #if DIAGNOSTICS
-                  Debug.WriteLine($" Line :{line} ResponseExpected:{atCommandExpectedResponse} Response:{response}");
+               Debug.WriteLine($" Line :{line} ResponseExpected:{atCommandExpectedResponse} Response:{response}");
 #endif
-                  int errorIndex = line.IndexOf(ErrorMarker);
-                  if (errorIndex != -1)
-                  {
-                     string errorNumber = line.Substring(errorIndex + ErrorMarker.Length);
+               int errorIndex = line.IndexOf(ErrorMarker);
+               if (errorIndex != -1)
+               {
+                  string errorNumber = line.Substring(errorIndex + ErrorMarker.Length);
 
-                     result = ModemErrorParser(errorNumber.Trim());
+                  result = ModemErrorParser(errorNumber.Trim());
+                  atExpectedEvent.Set();
+               }
+
+               if (atCommandExpectedResponse != string.Empty)
+               {
+                  int successIndex = line.IndexOf(atCommandExpectedResponse);
+                  if (successIndex != -1)
+                  {
+                     result = Result.Success;
                      atExpectedEvent.Set();
                   }
+               }
 
-                  if (atCommandExpectedResponse != string.Empty)
+               int receivedMessageIndex = line.IndexOf(ReplyMarker);
+               if (receivedMessageIndex != -1)
+               {
+                  string[] fields = line.Split("=,:".ToCharArray());
+
+                  int port = int.Parse(fields[1]);
+                  int rssi = int.Parse(fields[2]);
+                  int snr = int.Parse(fields[3]);
+                  int length = int.Parse(fields[4]);
+
+                  if (this.OnMessageConfirmation != null)
                   {
-                     int successIndex = line.IndexOf(atCommandExpectedResponse);
-                     if (successIndex != -1)
-                     {
-                        result = Result.Success;
-                        atExpectedEvent.Set();
-                     }
+                     OnMessageConfirmation(rssi, snr);
                   }
-
-                  int receivedMessageIndex = line.IndexOf(ReplyMarker);
-                  if (receivedMessageIndex != -1)
+                  if (length > 0)
                   {
-                     string[] fields = line.Split("=,:".ToCharArray());
+                     string payload = fields[5];
 
-                     int port = int.Parse(fields[1]);
-                     int rssi = int.Parse(fields[2]);
-                     int snr = int.Parse(fields[3]);
-                     int length = int.Parse(fields[4]);
-
-                     if (this.OnMessageConfirmation != null)
+                     if (this.OnReceiveMessage != null)
                      {
-                        OnMessageConfirmation(rssi, snr);
-                     }
-                     if (length > 0)
-                     {
-                        string payload = fields[5];
-
-                        if (this.OnReceiveMessage != null)
-                        {
-                           OnReceiveMessage(port, rssi, snr, payload);
-                        }
+                        OnReceiveMessage(port, rssi, snr, payload);
                      }
                   }
                }
             }
-            while (eolPosition != -1);
          }
+         while (eolPosition != -1);
+        
       }
 
       // Utility functions for clients for processing messages payloads to be send, ands messages payloads received.
